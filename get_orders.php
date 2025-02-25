@@ -10,7 +10,7 @@ $sql = "SELECT g.*, c.c_name, c.c_phone
         LEFT JOIN tbl_customer c ON g.customer_id = c.c_id
         WHERE g.order_ref LIKE '%$search_query%' OR c.c_name LIKE '%$search_query%' OR c.c_phone LIKE '%$search_query%'
         ORDER BY g.id DESC";
-    
+
 $rs = $conn->query($sql);
 
 // Output the table rows as HTML
@@ -32,15 +32,15 @@ if ($rs->num_rows > 0) {
 
             <?php
             // Calculate Discounted Total in a Single Query
-            $sqlS = "SELECT 
+            $sqlS = "SELECT
                         COALESCE(SUM(
-                            CASE 
-                                WHEN discount_type = 'p' THEN (m_price * (1 - discount / 100) * quantity) 
-                                WHEN discount_type = 'a' THEN ((m_price - discount) * quantity) 
+                            CASE
+                                WHEN discount_type = 'p' THEN (m_price * (1 - discount / 100) * quantity)
+                                WHEN discount_type = 'a' THEN ((m_price - discount) * quantity)
                                 ELSE 100
                             END
                         ), 0) AS total
-                     FROM tbl_order 
+                     FROM tbl_order
                      WHERE grm_ref='$ref'";
 
             $rsS = $conn->query($sqlS);
@@ -49,8 +49,8 @@ if ($rs->num_rows > 0) {
             <td><?= $total ?></td>
 
             <td>
-                <a class="me-3" href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#create" onclick="loadValue(<?= $ref ?>)">
-                    <img src="assets/img/icons/eye.svg" alt="View">
+                <a class="me-3" href="backend/gotopos.php?grm_id=<?= $ref ?>" >
+                    <button type="button" class="btn btn-secondary btn-sm" name="button">VIEW</button>
                 </a>
                 <a href="print_bill.php?bill_id=<?= $ref ?>" target="_blank">
                     <span style="color:#f74e05;font-weight:bold;">Print Bill</span>
@@ -62,7 +62,7 @@ if ($rs->num_rows > 0) {
                 </a>
             </td>
         </tr>
-    <?php 
+    <?php
     }
 }
 ?>

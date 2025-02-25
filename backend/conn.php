@@ -16,6 +16,29 @@ $dbname = "db_textile";
 
 $conn = new mysqli($servername,$username,$password,$dbname);
 
+function generateOrderRef($conn) {
+    // Fetch the last inserted order_ref from the database
+    $query = "SELECT order_ref FROM tbl_order_grm ORDER BY id DESC LIMIT 1";
+    $result = $conn->query($query);
+
+    if ($result->num_rows > 0) {
+        $row = $result->fetch_assoc();
+        $lastOrderRef = $row['order_ref'];
+
+        // Extract the numeric part from order_ref
+        preg_match('/(\d+)/', $lastOrderRef, $matches);
+        $lastNumber = isset($matches[1]) ? intval($matches[1]) : 0;
+    } else {
+        $lastNumber = 0; // If no data exists, start from 0
+    }
+
+    // Increment the number and format it to 6 digits (e.g., 000001, 000002)
+    $newNumber = str_pad($lastNumber + 1, 6, "0", STR_PAD_LEFT);
+
+    // Generate new order reference
+    return "BILL" . $newNumber;
+}
+
 function currentStockCount($conn,$p_id){
 
   $sqlMinStock = "SELECT SUM(quantity) AS qnty FROM tbl_order WHERE product_id='$p_id'";
@@ -25,16 +48,6 @@ function currentStockCount($conn,$p_id){
     $rowMinStock = $rsMinStock->fetch_assoc();
     $redStoc = $rowMinStock['qnty'];
   }
-
-  // $sqlMinStockCall = "SELECT SUM(quantity) AS qnty_call FROM tbl_order_temp WHERE product_id='$p_id' AND status !='0' AND status !='1'";
-  // $rsMinStockCall = $conn->query($sqlMinStockCall);
-
-  // if($rsMinStockCall->num_rows > 0){
-  //   $rowMinStockCall = $rsMinStockCall->fetch_assoc();
-  //   $redStocCall = $rowMinStockCall['qnty_call'];
-  // }
-
-  // $redStoc +=$redStocCall;
 
   $sqlSub = "SELECT SUM(quantity) AS quantity FROM tbl_expiry_date WHERE product_id='$p_id'";
   $rsSub = $conn->query($sqlSub);
@@ -46,25 +59,6 @@ function currentStockCount($conn,$p_id){
  else {
     $quantity = 0;
  }
-
-
-  // $sql_tally = "SELECT * FROM tbl_tally_stock WHERE product_id='$p_id'";
-  // $rs_tally = $conn->query($sql_tally);
-  // if($rs_tally->num_rows > 0){
-  //   while($row_tally = $rs_tally->fetch_assoc()){
-  //     $tally_qnty = $row_tally['new_quantity'];
-  //     $plus_minus = $row_tally['add_minus'];
-  //     if($plus_minus == 1){
-  //       $quantity += $tally_qnty;
-  //     }
-  //     elseif ($plus_minus == 2) {
-  //       $quantity -=$tally_qnty;
-  //     }
-  //   }
-
-
-  // }
-
 
  return $quantity;
 }

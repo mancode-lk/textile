@@ -1,3 +1,20 @@
+
+<?php
+  include 'backend/conn.php';
+
+  if(!isset($_SESSION['grm_ref'])){
+    $order_ref =generateOrderRef($conn);
+    $sqlCreate ="INSERT INTO tbl_order_grm (order_ref,order_st) VALUES('$order_ref',0)";
+    $rsCreate=$conn->query($sqlCreate);
+
+    $grm_id=$conn->insert_id;
+    $_SESSION['grm_ref'] =$grm_id;
+  }
+  else {
+    $grm_id=$_SESSION['grm_ref'];
+  }
+ ?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -24,7 +41,7 @@
     <!-- Header -->
     <header class="mb-4">
       <h1 class="text-center text-primary">
-        <i class="fas fa-store me-2"></i> POS System
+        <i class="fas fa-store me-2"></i> POS System BILL ID: 00<?= $grm_id ?>
       </h1>
     </header>
 
@@ -38,49 +55,36 @@
           </div>
           <div class="card-body">
             <!-- Cart Items List (Scrollable) -->
-            <h5 class="mb-3">Items</h5>
-            <div class="list-group scrollable mb-4">
-              <!-- Cart Item 1 -->
-              <div class="list-group-item d-flex justify-content-between align-items-center">
-                <div>
-                  <h6 class="mb-1">Top</h6>
-                  <small class="text-muted">Price: LKR 2200.00</small>
-                </div>
-                <div class="d-flex align-items-center">
-                  <input type="number" value="1" min="1" class="form-control form-control-sm me-2" style="width: 80px;" />
-                  <span class="fw-bold me-2">LKR 2200.00</span>
-                  <button class="btn btn-sm btn-danger">
-                    <i class="fas fa-trash-alt"></i>
-                  </button>
+            <div class="row">
+              <div class="col-lg-4">
+                <h5 class="mb-3">Items</h5>
+              </div>
+              <div class="col-lg-8">
+                <div class="input-group">
+                  <span class="input-group-text"><i class="fas fa-barcode"></i></span>
+                  <input type="text" class="form-control" id="barcodeInput" placeholder="Add Items By Barcode Search" />
                 </div>
               </div>
+            </div>
+            <div class="list-group scrollable mb-4" id="showCartItems">
+              <!-- Cart Item 1 -->
+
               <!-- Additional cart items can be added here -->
             </div>
 
             <!-- Bill Details -->
             <h5 class="mb-3">Bill Details</h5>
             <div class="row g-3 align-items-center">
-              <!-- Subtotal -->
-              <div class="col-6">
-                <p class="mb-0">Subtotal: <span class="fw-bold">LKR 2200.00</span></p>
-              </div>
               <!-- Product Discount -->
               <div class="col-6">
                 <div class="input-group">
                   <span class="input-group-text"><i class="fas fa-percentage"></i></span>
-                  <input type="text" class="form-control" placeholder="Prod Disc (10% or LKR100)" />
-                </div>
-              </div>
-              <!-- Bill Discount -->
-              <div class="col-6">
-                <div class="input-group">
-                  <span class="input-group-text"><i class="fas fa-percent"></i></span>
-                  <input type="text" class="form-control" placeholder="Bill Disc (5% or LKR200)" />
+                  <input type="text" id="discount_amount" onkeyup="discountBill(this.value)" class="form-control" placeholder="Bill Disc (LKR200)" />
                 </div>
               </div>
               <!-- Total -->
-              <div class="col-6 text-end">
-                <p class="h5 mb-0">Total: <span class="fw-bold">LKR 2200.00</span></p>
+              <div class="col-6 text-end" id="totalValue">
+
               </div>
             </div>
             <hr />
@@ -92,19 +96,20 @@
                 </label>
                 <div>
                   <div class="form-check form-check-inline">
-                    <input class="form-check-input" type="radio" name="payment" id="cash" value="cash" checked />
+                    <input class="form-check-input" type="radio" name="payment" id="payment_method" value="1" checked />
                     <label class="form-check-label" for="cash">Cash</label>
                   </div>
                   <div class="form-check form-check-inline">
-                    <input class="form-check-input" type="radio" name="payment" id="card" value="card" />
+                    <input class="form-check-input" type="radio" name="payment" id="payment_method" value="2" />
                     <label class="form-check-label" for="card">Card</label>
                   </div>
                   <div class="form-check form-check-inline">
-                    <input class="form-check-input" type="radio" name="payment" id="credit" value="credit" />
+                    <input class="form-check-input" type="radio" name="payment" id="payment_method" value="3" />
                     <label class="form-check-label" for="credit">Credit</label>
                   </div>
                 </div>
               </div>
+              <input type="hidden" id="totPrice" name="" value="">
               <!-- Amount Paid -->
               <div class="col-md-4">
                 <label class="form-label">
@@ -112,7 +117,7 @@
                 </label>
                 <div class="input-group">
                   <span class="input-group-text"><i class="fas fa-rupee-sign"></i></span>
-                  <input type="number" class="form-control" placeholder="Enter amount" />
+                  <input type="number" id="paid_amount" onkeyup="showBalance()" class="form-control" placeholder="Enter amount" />
                 </div>
               </div>
               <!-- Change -->
@@ -120,7 +125,16 @@
                 <label class="form-label d-block">
                   <i class="fas fa-exchange-alt me-1"></i>Change
                 </label>
-                <p class="h5 mb-0 fw-bold">LKR 0.00</p>
+                <p class="h5 mb-0 fw-bold">LKR <span id="balanceToGive"></span>.00</p>
+              </div>
+            </div>
+            <hr>
+            <div class="row">
+              <div class="col-lg-6">
+                <button type="button" class="btn btn-primary btn-sm" id="complete_bill" name="button">Complete Bill</button>
+              </div>
+              <div class="col-lg-6">
+                <button type="button" class="btn btn-secondary btn-sm" id="add_to draft" name="button">Add to Draft</button>
               </div>
             </div>
           </div>
@@ -201,18 +215,259 @@
 
 <script type="text/javascript">
 $(document).ready(function () {
-    $("#searchInput").keypress(function (event) {
-        if (event.which === 13) { // 13 is the Enter key
+    let barcode = "";
+
+    $("#barcodeInput").on("keypress", function (event) {
+        // Check if the pressed key is Enter (barcode scanners usually end with Enter)
+        if (event.which === 13) {
             event.preventDefault(); // Prevent form submission if inside a form
 
-            var searchInput = $("#searchInput").val(); // Get the input value
+            barcode = $(this).val().trim();
 
-            if (searchInput.trim() !== "") { // Ensure input is not empty
-                $('#list_item_search').load('ajax/list_item_search.php', { skey: searchInput });
-                // alert('hello');
+            if (barcode !== "") {
+                cartItemBarcode(barcode); // Call function with scanned barcode
+
+                setTimeout(() => {
+                    $(this).val(""); // Clear input after 1 second
+                    $(this).focus(); // Keep focus on input
+                }, 1000);
             }
         }
     });
 });
+
+$(document).ready(function () {
+    let searchTimeout; // Stores timeout ID
+    let ajaxRequest; // Stores active AJAX request
+
+    $("#searchInput").on("keyup", function () {
+        clearTimeout(searchTimeout); // Reset previous timeout
+
+        let searchInput = $(this).val().trim();
+
+        if (searchInput === "") {
+            $("#list_item_search").html(""); // Clear results if input is empty
+            return;
+        }
+
+        searchTimeout = setTimeout(function () {
+            // If an AJAX request is still active, abort it
+            if (ajaxRequest) {
+                ajaxRequest.abort();
+            }
+
+            ajaxRequest = $.ajax({
+                type: "POST",
+                url: "ajax/list_item_search.php",
+                data: { skey: searchInput },
+                beforeSend: function () {
+                    $("#list_item_search").html("<p>Loading...</p>"); // Show loading state
+                },
+                success: function (response) {
+                    $("#list_item_search").html(response);
+                },
+                error: function (xhr, status, error) {
+                    if (status !== "abort") {
+                        console.error("AJAX Error:", error);
+                    }
+                }
+            });
+        }, 300); // Delay execution by 300ms (adjust if needed)
+    });
+});
+
+function discountBill(price){
+  $('#totalValue').load('ajax/bill_total.php',{
+    disc_price:price
+  });
+}
+
+
+
+
+function cartItemBarcode(barcode){
+  $.ajax({
+    url:'backend/add_item_cart_barcode.php',
+    method:'POST',
+    data:{
+      bcode:barcode,
+    },
+    success:function(resp){
+      if(resp == 200){
+        let paid_amount = parseFloat(document.getElementById('paid_amount').value) || 0;
+        if(paid_amount !=0){
+          showBalance();
+        }
+        calculateTotal();
+        $('#showCartItems').load('ajax/cart_items.php');
+      }
+      else {
+        console.log(resp);
+      }
+    }
+  });
+}
+
+
+function addToOrders(id,qnty){
+  $.ajax({
+    url:'backend/add_item_cart.php',
+    method:'POST',
+    data:{
+      p_id:id,
+      qty:qnty
+    },
+    success:function(resp){
+      if(resp == 200){
+        let paid_amount = parseFloat(document.getElementById('paid_amount').value) || 0;
+        if(paid_amount !=0){
+          showBalance();
+        }
+        calculateTotal();
+        $('#showCartItems').load('ajax/cart_items.php');
+      }
+      else {
+        alert('something went wrong');
+      }
+    }
+  });
+}
+
+function del_item_cart(id){
+  $.ajax({
+    url:'backend/delete_cart_item.php',
+    method:'POST',
+    data:{
+      order_id:id,
+    },
+    success:function(resp){
+      if(resp == 200){
+        let paid_amount = parseFloat(document.getElementById('paid_amount').value) || 0;
+        if(paid_amount !=0){
+          showBalance();
+        }
+        calculateTotal();
+        $('#showCartItems').load('ajax/cart_items.php');
+      }
+      else {
+        alert('something went wrong');
+      }
+    }
+  });
+}
+
+let updateTimeout;
+let ajaxRequest;
+
+function updateQnty(id, qnty) {
+    clearTimeout(updateTimeout); // Prevent multiple rapid AJAX calls
+
+    updateTimeout = setTimeout(() => {
+        if (ajaxRequest) {
+            ajaxRequest.abort(); // Cancel the previous AJAX request
+        }
+
+        ajaxRequest = $.ajax({
+            url: 'backend/update_qnty.php',
+            method: 'POST',
+            data: { order_id: id, qty: qnty },
+            success: function (resp) {
+                if (resp == 200) {
+                    $('#showCartItems').load('ajax/cart_items.php');
+                } else {
+                    console.error('Update failed:', resp);
+                }
+            },
+            error: function (xhr, status) {
+                if (status !== "abort") {
+                    console.error('AJAX error:', xhr.responseText);
+                }
+            }
+        });
+    }, 1500); // Debounce delay (adjust as needed)
+}
+
+function calculateTotal(){
+  $('#totalValue').load('ajax/bill_total.php');
+}
+
+
+function showBalance() {
+    let totPrice = parseFloat(document.getElementById('totPrice').value) || 0;
+    let paid_amount = parseFloat(document.getElementById('paid_amount').value) || 0;
+
+    let balance = paid_amount - totPrice;
+
+    document.getElementById('balanceToGive').innerHTML = balance.toFixed(2); // Format to 2 decimal places
+}
+
+$(document).ready(function () {
+    $("#complete_bill").click(function () {
+        let discount_amount = $("#discount_amount").val() || 0; // Get discount amount
+        let payment_method = $("input[name='payment']:checked").val(); // Get selected payment method
+
+        $.ajax({
+            url: "backend/save_bill.php",
+            method: "POST",
+            data: {
+                discount_amount: discount_amount,
+                payment_method: payment_method,
+                action: "complete_bill" // Identifier for backend
+            },
+            beforeSend: function () {
+                $("#complete_bill").prop("disabled", true).text("Processing..."); // Disable button during request
+            },
+            success: function (response) {
+                if (response == 200) {
+                    window.location.href = "pos_grm.php"; // Redirect on success
+                } else {
+                    alert("Error: " + response);
+                    $("#complete_bill").prop("disabled", false).text("Complete Bill");
+                }
+            },
+            error: function (xhr, status, error) {
+                alert("Failed to complete bill. Try again.");
+                $("#complete_bill").prop("disabled", false).text("Complete Bill");
+                console.error(error);
+            }
+        });
+    });
+
+    $("#add_to_draft").click(function () {
+        let discount_amount = $("#discount_amount").val() || 0;
+        let payment_method = $("input[name='payment']:checked").val();
+
+        $.ajax({
+            url: "backend/save_bill.php",
+            method: "POST",
+            data: {
+                discount_amount: discount_amount,
+                payment_method: payment_method,
+                action: "add_to_draft"
+            },
+            beforeSend: function () {
+                $("#add_to_draft").prop("disabled", true).text("Saving...");
+            },
+            success: function (response) {
+                if (response == 200) {
+                    alert("Bill saved as draft!");
+                    window.location.href = "pos_grm.php";
+                } else {
+                    alert("Error: " + response);
+                    $("#add_to_draft").prop("disabled", false).text("Add to Draft");
+                }
+            },
+            error: function (xhr, status, error) {
+                alert("Failed to save draft.");
+                $("#add_to_draft").prop("disabled", false).text("Add to Draft");
+                console.error(error);
+            }
+        });
+    });
+});
+
+
+$('#showCartItems').load('ajax/cart_items.php');
+$('#totalValue').load('ajax/bill_total.php');
 
 </script>
