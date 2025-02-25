@@ -7,27 +7,30 @@
           <a href="index.php" ><img src="assets/img/icons/dashboard.svg" alt="img"><span> Dashboard</span> </a>
         </li>
 
-        
-        
+
+
         <li class="<?php if($pg_name=='pos.php'){echo('active');} ?>" >
           <a href="pos.php" ><i class="fa fa-desktop"></i><span> POS</span> </a>
         </li>
-        
+
         <li class="<?php if($pg_name=='vendorlist.php'){echo('active');} ?>" >
           <a href="vendor.php" ><i class="fa fa-desktop"></i><span> Vendor Management</span> </a>
         </li>
-        
+        <li class="<?php if($pg_name=='customers.php'){echo('active');} ?>">
+    <a href="customers.php"><i class="fa fa-users"></i><span> Customer Management</span></a>
+</li>
+
         <?php if($u_id==1){
                   ?>
                   <li class="<?php if($pg_name=='sales_report.php'){echo('active');} ?>" >
           <a href="sales_report.php" ><img src="assets/img/icons/sale.svg" alt="img"><span> Sales Report</span> </a>
         </li>
-       
 
-     
-      
 
-       
+
+
+
+
         <li class="submenu">
           <a href="javascript:void(0);"><i class="fa fa-user" data-bs-toggle="tooltip" title="" data-bs-original-title="fa fa-anchor" aria-label="fa fa-anchor"></i>
             <span> User Management</span> <span class="menu-arrow"></span></a>

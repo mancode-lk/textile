@@ -43,12 +43,12 @@
               <!-- Cart Item 1 -->
               <div class="list-group-item d-flex justify-content-between align-items-center">
                 <div>
-                  <h6 class="mb-1">Product A</h6>
-                  <small class="text-muted">Price: LKR 750.00</small>
+                  <h6 class="mb-1">Top</h6>
+                  <small class="text-muted">Price: LKR 2200.00</small>
                 </div>
                 <div class="d-flex align-items-center">
                   <input type="number" value="1" min="1" class="form-control form-control-sm me-2" style="width: 80px;" />
-                  <span class="fw-bold me-2">LKR 750.00</span>
+                  <span class="fw-bold me-2">LKR 2200.00</span>
                   <button class="btn btn-sm btn-danger">
                     <i class="fas fa-trash-alt"></i>
                   </button>
@@ -62,7 +62,7 @@
             <div class="row g-3 align-items-center">
               <!-- Subtotal -->
               <div class="col-6">
-                <p class="mb-0">Subtotal: <span class="fw-bold">LKR 3150.00</span></p>
+                <p class="mb-0">Subtotal: <span class="fw-bold">LKR 2200.00</span></p>
               </div>
               <!-- Product Discount -->
               <div class="col-6">
@@ -80,7 +80,7 @@
               </div>
               <!-- Total -->
               <div class="col-6 text-end">
-                <p class="h5 mb-0">Total: <span class="fw-bold">LKR 3150.00</span></p>
+                <p class="h5 mb-0">Total: <span class="fw-bold">LKR 2200.00</span></p>
               </div>
             </div>
             <hr />
@@ -178,37 +178,9 @@
             </form>
             <!-- Search Results (Scrollable) -->
             <div class="mt-4 scrollable-results">
-              <ul class="list-group">
+              <ul class="list-group" id="list_item_search">
                 <!-- Search Result Item 1 -->
-                <li class="list-group-item d-flex justify-content-between align-items-center">
-                  <div>
-                    <h6 class="mb-1">Product X</h6>
-                    <small class="text-muted">Price: LKR 750.00 | In Stock: 12</small>
-                  </div>
-                  <button class="btn btn-sm btn-primary">
-                    <i class="fas fa-plus"></i>
-                  </button>
-                </li>
-                <!-- Search Result Item 2 -->
-                <li class="list-group-item d-flex justify-content-between align-items-center">
-                  <div>
-                    <h6 class="mb-1">Product Y</h6>
-                    <small class="text-muted">Price: LKR 950.00 | Out of Stock</small>
-                  </div>
-                  <button class="btn btn-sm btn-secondary" disabled>
-                    <i class="fas fa-ban"></i>
-                  </button>
-                </li>
-                <!-- Search Result Item 3 -->
-                <li class="list-group-item d-flex justify-content-between align-items-center">
-                  <div>
-                    <h6 class="mb-1">Product Z</h6>
-                    <small class="text-muted">Price: LKR 1200.00 | In Stock: 5</small>
-                  </div>
-                  <button class="btn btn-sm btn-primary">
-                    <i class="fas fa-plus"></i>
-                  </button>
-                </li>
+
                 <!-- Additional search results can be appended here -->
               </ul>
             </div>
@@ -221,5 +193,26 @@
 
   <!-- Bootstrap 5 JS Bundle -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <!-- jQuery (Required for AJAX) -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
 </body>
 </html>
+
+<script type="text/javascript">
+$(document).ready(function () {
+    $("#searchInput").keypress(function (event) {
+        if (event.which === 13) { // 13 is the Enter key
+            event.preventDefault(); // Prevent form submission if inside a form
+
+            var searchInput = $("#searchInput").val(); // Get the input value
+
+            if (searchInput.trim() !== "") { // Ensure input is not empty
+                $('#list_item_search').load('ajax/list_item_search.php', { skey: searchInput });
+                // alert('hello');
+            }
+        }
+    });
+});
+
+</script>
