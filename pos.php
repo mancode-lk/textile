@@ -293,53 +293,77 @@ function discountBill(price){
 
 
 
-function cartItemBarcode(barcode){
-  $.ajax({
-    url:'backend/add_item_cart_barcode.php',
-    method:'POST',
-    data:{
-      bcode:barcode,
-    },
-    success:function(resp){
-      if(resp == 200){
-        let paid_amount = parseFloat(document.getElementById('paid_amount').value) || 0;
-        if(paid_amount !=0){
-          showBalance();
+function cartItemBarcode(barcode) {
+    $.ajax({
+        url: 'backend/add_item_cart_barcode.php',
+        method: 'POST',
+        data: {
+            bcode: barcode
+        },
+        dataType: "json", // Ensure we parse JSON response correctly
+        success: function (resp) {
+            if (resp.statusCode === 200) {
+                alert("✔ Item Added Successfully!");
+
+                let paid_amount = parseFloat(document.getElementById('paid_amount').value) || 0;
+                if (paid_amount !== 0) {
+                    showBalance();
+                }
+                calculateTotal();
+                $('#showCartItems').load('ajax/cart_items.php');
+            }
+            else if (resp.statusCode === 400) {
+                alert("⚠ " + resp.message); // Shows "Out of stock" or "Product not found"
+            }
+            else {
+                alert("❌ Something went wrong! Please try again.");
+            }
+        },
+        error: function () {
+            alert("❌ Network Error! Failed to add item. Check your connection.");
         }
-        calculateTotal();
-        $('#showCartItems').load('ajax/cart_items.php');
-      }
-      else {
-        console.log(resp);
-      }
-    }
-  });
+    });
 }
 
 
-function addToOrders(id,qnty){
-  $.ajax({
-    url:'backend/add_item_cart.php',
-    method:'POST',
-    data:{
-      p_id:id,
-      qty:qnty
-    },
-    success:function(resp){
-      if(resp == 200){
-        let paid_amount = parseFloat(document.getElementById('paid_amount').value) || 0;
-        if(paid_amount !=0){
-          showBalance();
+function addToOrders(id, qnty) {
+    $.ajax({
+        url: 'backend/add_item_cart.php',
+        method: 'POST',
+        data: {
+            p_id: id,
+            qty: qnty
+        },
+        dataType: "json", // Ensure JSON response
+        success: function (resp) {
+            if (resp.statusCode === 200) {
+                // ✅ Success Alert
+                alert("✔ Item Added Successfully!");
+
+                let paid_amount = parseFloat(document.getElementById('paid_amount').value) || 0;
+                if (paid_amount !== 0) {
+                    showBalance();
+                }
+                calculateTotal();
+                $('#showCartItems').load('ajax/cart_items.php');
+            }
+            else if (resp.statusCode === 400) {
+                // ❌ Error Alert for Stock Issues
+                alert("⚠ " + resp.message); // Displays "Out of stock" or "Only X items left"
+            }
+            else {
+                // ❌ General Error Alert
+                alert("❌ Something went wrong! Please try again.");
+            }
+        },
+        error: function () {
+            // ❌ AJAX Request Failed
+            alert("❌ Network Error! Failed to add item. Check your connection.");
         }
-        calculateTotal();
-        $('#showCartItems').load('ajax/cart_items.php');
-      }
-      else {
-        alert('something went wrong');
-      }
-    }
-  });
+    });
 }
+
+
 
 function del_item_cart(id){
   $.ajax({
