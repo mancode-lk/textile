@@ -9,8 +9,9 @@
       while($row = $rs->fetch_assoc()){
         $id = $row['id'];
         $p_id=$row['product_id'];
+        $qty =$row['quantity'];
         $p_name = getDataBack($conn,'tbl_product','id',$p_id,'name');
-        $p_price =getDataBack($conn,'tbl_product','id',$p_id,'price');
+        $p_price =getDataBack($conn,'tbl_product','id',$p_id,'price') * $qty;
         $total_price +=$p_price;
     ?>
 

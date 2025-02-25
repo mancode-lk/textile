@@ -373,6 +373,11 @@ function updateQnty(id, qnty) {
             data: { order_id: id, qty: qnty },
             success: function (resp) {
                 if (resp == 200) {
+                  let paid_amount = parseFloat(document.getElementById('paid_amount').value) || 0;
+                  if(paid_amount !=0){
+                    showBalance();
+                  }
+                  calculateTotal();
                     $('#showCartItems').load('ajax/cart_items.php');
                 } else {
                     console.error('Update failed:', resp);

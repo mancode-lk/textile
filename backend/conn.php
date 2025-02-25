@@ -33,10 +33,10 @@ function generateOrderRef($conn) {
     }
 
     // Increment the number and format it to 6 digits (e.g., 000001, 000002)
-    $newNumber = str_pad($lastNumber + 1, 6, "0", STR_PAD_LEFT);
+    $newNumber = $lastNumber + 1;
 
     // Generate new order reference
-    return "BILL" . $newNumber;
+    return date('Y-m-d')."-". $newNumber;
 }
 
 function currentStockCount($conn,$p_id){

@@ -39,22 +39,23 @@ if ($rs->num_rows > 0) {
 
 
             <?php
+            $total =0;
             // Calculate Discounted Total in a Single Query
-            $sqlS = "SELECT
-                        COALESCE(SUM(
-                            CASE
-                                WHEN discount_type = 'p' THEN (m_price * (1 - discount / 100) * quantity)
-                                WHEN discount_type = 'a' THEN ((m_price - discount) * quantity)
-                                ELSE 100
-                            END
-                        ), 0) AS total
-                     FROM tbl_order
+            $sqlS = "SELECT * FROM tbl_order
                      WHERE grm_ref='$ref'";
 
             $rsS = $conn->query($sqlS);
-            $total = ($rsS->num_rows > 0) ? number_format($rsS->fetch_assoc()['total'], 2) : '0.00';
+            if($rsS->num_rows > 0){
+              while($rowS=$rsS->fetch_assoc()){
+              $pid = $rowS['product_id'];
+              $qty = $rowS['quantity'];
+
+              $priceP = getDataBack($conn,'tbl_product','id',$pid,'price');
+              $total +=$priceP * $qty;
+            }
+            }
             ?>
-            <td><?= $total ?></td>
+            <td> LKR <?= number_format($total, 2) ?> </td>
 
             <td>
                 <a class="me-3" href="backend/gotopos.php?grm_id=<?= $ref ?>" >
