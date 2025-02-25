@@ -16,12 +16,20 @@ $rs = $conn->query($sql);
 // Output the table rows as HTML
 if ($rs->num_rows > 0) {
     while ($row = $rs->fetch_assoc()) {
+        $orderStatus = $row['order_st'];
+        if($orderStatus == 0){
+          $orSt="DRAFT";
+        }
+        else {
+          $orSt="Completed";
+        }
+
         $ref = intval($row['id']); // Ensure ID is always an integer
         $customer = htmlspecialchars($row['c_name'] ?? 'N/A');
         $customerPhone = htmlspecialchars($row['c_phone'] ?? 'N/A');
         ?>
         <tr>
-            <td><?= htmlspecialchars($row['order_ref']) ?></td>
+            <td><?= htmlspecialchars($row['order_ref']) ?> - '<?= $orSt ?>' </td>
             <td><?= $customer ?></td>
             <td><?= $customerPhone ?></td>
             <td><?= htmlspecialchars($row['order_date']) ?></td>

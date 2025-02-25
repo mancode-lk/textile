@@ -134,7 +134,7 @@
                 <button type="button" class="btn btn-primary btn-sm" id="complete_bill" name="button">Complete Bill</button>
               </div>
               <div class="col-lg-6">
-                <button type="button" class="btn btn-secondary btn-sm" id="add_to draft" name="button">Add to Draft</button>
+                <button type="button" class="btn btn-secondary btn-sm" id="add_to_draft" name="button">Add to Draft</button>
               </div>
             </div>
           </div>
