@@ -96,12 +96,16 @@
                 </label>
                 <div>
                   <div class="form-check form-check-inline">
-                    <input class="form-check-input" type="radio" name="payment" id="payment_method" value="1" checked />
+                    <input class="form-check-input" type="radio" name="payment" id="payment_method" value="0" checked />
                     <label class="form-check-label" for="cash">Cash</label>
                   </div>
                   <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="radio" name="payment" id="payment_method" value="1" />
+                    <label class="form-check-label" for="card">Online Pay</label>
+                  </div>
+                  <div class="form-check form-check-inline">
                     <input class="form-check-input" type="radio" name="payment" id="payment_method" value="2" />
-                    <label class="form-check-label" for="card">Card</label>
+                    <label class="form-check-label" for="credit">Bank Transfer</label>
                   </div>
                   <div class="form-check form-check-inline">
                     <input class="form-check-input" type="radio" name="payment" id="payment_method" value="3" />
