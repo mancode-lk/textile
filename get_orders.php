@@ -55,7 +55,7 @@ if ($rs->num_rows > 0) {
             }
             }
             ?>
-            <td> LKR <?= number_format($total, 2) ?> </td>
+            <td> LKR <?= number_format($total-$row['discount_price'], 2) ?> </td>
 
             <td>
                 <a class="me-3" href="backend/gotopos.php?grm_id=<?= $ref ?>" >
