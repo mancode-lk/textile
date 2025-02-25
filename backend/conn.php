@@ -17,27 +17,31 @@ $dbname = "db_textile";
 $conn = new mysqli($servername,$username,$password,$dbname);
 
 function generateOrderRef($conn) {
-    // Fetch the last inserted order_ref from the database
-    $query = "SELECT order_ref FROM tbl_order_grm ORDER BY id DESC LIMIT 1";
+    // Fetch the last inserted order_ref for today's date
+    $query = "SELECT order_ref FROM tbl_order_grm
+              WHERE order_ref LIKE '".date('Y-m-d')."-%'
+              ORDER BY id DESC LIMIT 1";
+
     $result = $conn->query($query);
 
     if ($result->num_rows > 0) {
         $row = $result->fetch_assoc();
         $lastOrderRef = $row['order_ref'];
 
-        // Extract the numeric part from order_ref
-        preg_match('/(\d+)/', $lastOrderRef, $matches);
+        // Extract the numeric part after the last hyphen (-)
+        preg_match('/-(\d+)$/', $lastOrderRef, $matches);
         $lastNumber = isset($matches[1]) ? intval($matches[1]) : 0;
     } else {
-        $lastNumber = 0; // If no data exists, start from 0
+        $lastNumber = 0; // If no previous order, start from 0
     }
 
-    // Increment the number and format it to 6 digits (e.g., 000001, 000002)
+    // Increment the number (no leading zeros)
     $newNumber = $lastNumber + 1;
 
     // Generate new order reference
-    return date('Y-m-d')."-". $newNumber;
+    return date('Y-m-d') . "-" . $newNumber;
 }
+
 
 function currentStockCount($conn,$p_id){
 
