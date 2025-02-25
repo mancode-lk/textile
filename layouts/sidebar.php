@@ -12,6 +12,10 @@
         <li class="<?php if($pg_name=='pos.php'){echo('active');} ?>" >
           <a href="pos.php" ><i class="fa fa-desktop"></i><span> POS</span> </a>
         </li>
+        <li class="<?php if($pg_name=='pos_grm.php'){echo('active');} ?>">
+    <a href="pos_grm.php"><i class="fas fa-cash-register"></i><span> Bills</span></a>
+</li>
+
 
         <li class="<?php if($pg_name=='vendorlist.php'){echo('active');} ?>" >
           <a href="vendor.php" ><i class="fa fa-desktop"></i><span> Vendor Management</span> </a>

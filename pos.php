@@ -40,10 +40,14 @@
   <div class="container my-4">
     <!-- Header -->
     <header class="mb-4">
+      <a href="pos_grm.php" class="btn btn-outline-dark btn-lg px-4 py-2 fw-bold shadow-sm">
+         <i class="fas fa-receipt me-2"></i> GO TO BILLS
+     </a>
       <h1 class="text-center text-primary">
         <i class="fas fa-store me-2"></i> POS System BILL ID: 00<?= $grm_id ?>
       </h1>
     </header>
+
 
     <!-- Two-column layout: Left = Cart Summary & Bill, Right = Product Search -->
     <div class="row g-4">
