@@ -1,4 +1,10 @@
 <?php include './backend/conn.php'; ?>
+<div class="row mt-4">
+    <div class="col-md-4">
+        <input type="text" id="searchBox" class="form-control" placeholder="Search by Name or Contact">
+    </div>
+</div>
+
 <table class="table datanew">
   <thead>
     <tr>
@@ -44,6 +50,8 @@
         // Calculate the remaining balance after discounts
         $remaining_balance = $total_purchase - ($total_paid + $total_expense + $total_discount);
     ?>
+
+    
       <tr>
         <td><?= htmlspecialchars($row['vendor_name']) ?></td>
         <td><?= htmlspecialchars($row['phone']) ?></td>
@@ -53,17 +61,24 @@
         <td><?= number_format($remaining_balance, 2) ?></td> <!-- Remaining Balance -->
         <td>
           <a class="me-3" href="vendor_details.php?vendor_id=<?= $vendor_id ?>"><img src="assets/img/icons/eye.svg" alt="View"></a>
-          <a class="me-3" href="editvendor.php?vendor_id=<?= $vendor_id ?>">
+          <?php
+          if($u_id==1){
+            ?>
+            <a class="me-3" href="editvendor.php?vendor_id=<?= $vendor_id ?>">
             <img src="assets/img/icons/edit.svg" alt="img">
           </a>
           <a onclick="del_prod(<?= $vendor_id ?>)" class="me-3 confirm-text" href="javascript:void(0);">
             <img src="assets/img/icons/delete.svg" alt="Delete">
           </a>
+            <?php
+          }
+          ?>
 
         </td>
         <td>
           <input type="number" id="discount_amount_<?= $vendor_id ?>" class="form-control" placeholder="Enter discount amount">
           <button onclick="applyDiscount(<?= $vendor_id ?>)" class="btn btn-primary mt-2">Apply</button>
+          <a href="manage_expenses.php"><button class="btn btn-danger mt-2">Make a payment</button></a>
         </td>
       </tr>
     <?php }} else { ?>
@@ -99,4 +114,22 @@ function applyDiscount(vendorId) {
         alert("Enter a valid discount amount!");
     }
 }
+
+document.getElementById('searchBox').addEventListener('input', function() {
+    var query = this.value.toLowerCase(); // Convert to lowercase for case-insensitive search
+    var rows = document.querySelectorAll('table tbody tr');
+
+    rows.forEach(function(row) {
+        var vendorName = row.cells[0].textContent.toLowerCase();
+        var contact = row.cells[1].textContent.toLowerCase();
+
+        // Check if either the vendor name or contact matches the search query
+        if (vendorName.includes(query) || contact.includes(query)) {
+            row.style.display = ''; // Show the row if there's a match
+        } else {
+            row.style.display = 'none'; // Hide the row if no match
+        }
+    });
+});
+
 </script>

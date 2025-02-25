@@ -1,7 +1,5 @@
-<?php 
-
-include './backend/conn.php'; 
-$u_id = $_SESSION['u_id'];
+<?php include './backend/conn.php'; 
+$u_id=$_SESSION['u_id'];
 include './layouts/sidebar.php'; 
 ?>
 <?php
@@ -9,6 +7,7 @@ if (!isset($_SESSION['user_logged'])) {
     header('location:./signin.php');
     exit();
 }
+
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -198,7 +197,6 @@ if (!isset($_SESSION['user_logged'])) {
                                         <th>Selling Price</th>
                                         <th>Qty</th>
                                         <th>Total</th>
-                                        <th>Number of Prints</th>
                                         <th>Action</th>
                                     </tr>
                                 </thead>
@@ -209,9 +207,7 @@ if (!isset($_SESSION['user_logged'])) {
                                     <tr class="table-active">
                                         <td colspan="3" class="text-end fw-bold">Grand Total:</td>
                                         <td id="grandTotal">Rs 0.00</td>
-                                        <td colspan="2">
-                                            <button class="btn btn-sm btn-primary" onclick="printAllBarcodes()">Print All Barcodes</button>
-                                        </td>
+                                        <td><button onclick="printBarcode(<?= $row['id'] ?>)" class="btn btn-sm btn-primary">Print Barcode</button></td>
                                     </tr>
                                 </tfoot>
                             </table>
@@ -249,7 +245,7 @@ function searchProd() {
     }
 }
 
-function addToPurchase(productId, productName, price, selling_price, vendorName, vendorId, image = '') {
+function addToPurchase(productId, productName, price,selling_price, vendorName, vendorId, image = '') {
     const selectedVendor = document.getElementById('vendor_id').value;
     
     if (!selectedVendor) {
@@ -269,8 +265,7 @@ function addToPurchase(productId, productName, price, selling_price, vendorName,
             quantity: 1,
             vendor: vendorName,
             image: image,
-            selling_price: selling_price,
-            prints: 1  // Default to 1 print
+            selling_price:selling_price
         });
     } else {
         existingItem.quantity++;
@@ -303,13 +298,19 @@ function updatePurchaseTable() {
                 <td>Rs ${item.price.toFixed(2)}</td>
                 <td>Rs ${item.selling_price.toFixed(2)}</td>
                 <td>
-                    <input type="number" class="form-control form-control-sm" value="${item.quantity}" onchange="updateQuantity(${index}, event)">
+                    <input type="number" class="form-control form-control-sm" 
+                           value="${item.quantity}" min="1"
+                           onchange="updateQuantity(${index}, this.value)">
                 </td>
                 <td>Rs ${total.toFixed(2)}</td>
                 <td>
-                    <input type="number" class="form-control form-control-sm" value="${item.prints}" onchange="updatePrints(${index}, event)">
+                    <button class="btn btn-outline-danger btn-sm" 
+                            onclick="removeItem(${index})">
+                        <i class="fas fa-times"></i>
+                    </button>
+                    <button class="btn btn-sm btn-primary" 
+                            onclick="printBarcode(${item.id})">Print Barcode</button>
                 </td>
-                <td><button class="btn btn-sm btn-danger" onclick="removeItem(${index})">Remove</button></td>
             </tr>
         `;
     });
@@ -317,15 +318,14 @@ function updatePurchaseTable() {
     document.getElementById('grandTotal').textContent = `Rs ${grandTotal.toFixed(2)}`;
 }
 
-function updateQuantity(index, event) {
-    const value = event.target.value;
-    purchaseItems[index].quantity = value;
-    updatePurchaseTable();
+function printBarcode(productId) {
+    var printWindow = window.open('print_barcode.php?id=' + productId, '_blank');
+    printWindow.focus();
 }
 
-function updatePrints(index, event) {
-    const value = event.target.value;
-    purchaseItems[index].prints = value;
+function updateQuantity(index, value) {
+    const qty = Math.max(1, parseInt(value) || 1);
+    purchaseItems[index].quantity = qty;
     updatePurchaseTable();
 }
 
@@ -334,32 +334,59 @@ function removeItem(index) {
     updatePurchaseTable();
 }
 
-function printAllBarcodes() {
-    const productIds = purchaseItems.map(item => item.id).join(',');
-    const printCount = purchaseItems[0].prints; // Assuming all items have the same print count
-
-    const printUrl = `print_barcode.php?id=${productIds}&prints=${printCount}`;
-    window.open(printUrl, '_blank');
-}
-
-
 function submitPurchase() {
-    const vendor = document.getElementById('vendor_id').value;
-    if (!vendor) {
-        alert('Please select a vendor.');
+    const vendorId = document.getElementById('vendor_id').value;
+    const purchaseDate = document.getElementById('purchase_date').value;
+    
+    if (!vendorId) {
+        alert('Please select a vendor');
         return;
     }
-    
+
     if (purchaseItems.length === 0) {
-        alert('Please add at least one product to the purchase.');
+        alert('Please add at least one item');
         return;
     }
-    
-    // Submit purchase data logic
-    alert('Purchase finalized successfully!');
+
+    const formData = new FormData();
+    formData.append('vendor_id', vendorId);
+    formData.append('purchase_date', purchaseDate);
+    formData.append('items', JSON.stringify(purchaseItems));
+
+    fetch('./backend/save_purchase.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Purchase saved successfully!');
+            purchaseItems = [];
+            updatePurchaseTable();
+            document.getElementById('vendor_id').value = '';
+        } else {
+            alert('Error: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while saving the purchase');
+    });
 }
 
-</script>
+document.getElementById('search_name').addEventListener('keydown', function (event) {
+    if (event.key === 'Enter') {
+        event.preventDefault();
+        selectFirstProduct();
+    }
+});
 
+function selectFirstProduct() {
+    const firstResult = document.querySelector('#searchResults .search-item');
+    if (firstResult) {
+        firstResult.click();
+    }
+}
+</script>
 </body>
 </html>

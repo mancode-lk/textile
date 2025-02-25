@@ -256,7 +256,7 @@ $results = $result->fetch_all(MYSQLI_ASSOC);
                                 <td><?= !empty($row['Phone']) ? htmlspecialchars($row['Phone']) : 'Not Available' ?></td>
                                 <td><?= !empty($row['Email']) ? htmlspecialchars($row['Email']) : 'Not Available' ?></td>
                                 <td><?= !empty($row['City']) ? htmlspecialchars($row['City']) : 'Not Available' ?></td>
-                                <td class="currency"><?= !empty($row['CreditBalance']) ? '$' . number_format($row['CreditBalance'], 2) : 'Not Available' ?></td>
+                                <td class="currency"><?= !empty($row['CreditBalance']) ? 'Rs.' . number_format($row['CreditBalance'], 2) : 'Not Available' ?></td>
                                 <td><?= htmlspecialchars($row['OrderID']) ?></td>
                                 <td><?= date('M d, Y', strtotime($row['OrderDate'])) ?></td>
                                 <td><?= htmlspecialchars($row['PaymentMethod']) ?></td>

@@ -35,27 +35,10 @@
 									</div>
 								</div>
 
-								<div class="col-lg-3 col-sm-6 col-12">
-									<div class="form-group">
-										<label>Sales Point</label>
-										<div class="col-md-12">
-
-											<select name="sale_point" class="form-control select" required>
-												<option>Choose Sales point</option>
-												<?php
-												$sql = "SELECT * FROM tbl_sales_point";
-												$rs = $conn->query($sql);
-												if($rs->num_rows >0){
-													while($row = $rs->fetch_assoc()){ ?>
-													 <option value="<?=$row['id'] ?>"><?= $row['sale_point_name'] ?></option>
-											 <?php }} ?>
-											</select>
-										</div>
-									</div>
-								</div>
+								
 								<div class="col-lg-12">
 									<button type="submit" class="btn btn-submit me-2">Submit</button>
-									<a href="userlist.html"  class="btn btn-cancel">Cancel</a>
+									<a href="userlist.php"  class="btn btn-cancel">Cancel</a>
 								</div>
 								</form>
 							</div>
@@ -65,7 +48,6 @@
 										<tr>
 											<th>User</th>
 											<th>Password</th>
-											<th>Sales Point</th>
 											<th>Actions</th>
 										</tr>
 									</thead>
@@ -81,7 +63,7 @@
 										<tr>
 											<td> <?= $rowUsers['username'] ?> </td>
 											<td> <?= $rowUsers['password'] ?> </td>
-											<td> <?= getDataBack($conn,'tbl_sales_point','id',$s_id,'sale_point_name') ?> </td>
+											
 											<td> <a href="backend/del_user.php?id=<?= $rowUsers['user_id'] ?>"
                                              onclick="return confirm('Are you sure you want to delete?')" class="btn btn-danger btn-sm">Delete</a> ||
                                               <a class="btn btn-warning btn-sm" onclick="editUser(<?= $rowUsers['user_id'] ?>)">Edit</a> </td>

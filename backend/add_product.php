@@ -13,11 +13,11 @@ $required = ['category_id', 'name', 'quantity', 'unit_id', 'barcode',
             'cost_price', 'price', 'status', 'vendor_id'];
 $missing = array_diff($required, array_keys($_POST));
 
-if (!empty($missing)) {
-    $_SESSION['error_cus'] = 'Missing required fields: ' . implode(', ', $missing);
-    header('Location: ../addproduct.php');
-    exit();
-}
+// if (!empty($missing)) {
+//     $_SESSION['error_cus'] = 'Missing required fields: ' . implode(', ', $missing);
+//     header('Location: ../addproduct.php');
+//     exit();
+// }
 
 // Sanitize input data
 $user_id = $_SESSION['u_id'];
@@ -32,7 +32,7 @@ $status = filter_input(INPUT_POST, 'status', FILTER_VALIDATE_INT);
 $vendor_id = filter_input(INPUT_POST, 'vendor_id', FILTER_VALIDATE_INT);
 $hs_code = htmlspecialchars(trim($_POST['hs_code']));
 // Validate numeric values
-if ($quantity < 1 || $cost_price <= 0 || $price <= 0) {
+if ($quantity < 0 || $cost_price <= 0 || $price <= 0) {
     $_SESSION['error_cus'] = 'Invalid numeric values provided';
     header('Location: ../addproduct.php');
     exit();

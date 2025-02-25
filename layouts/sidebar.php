@@ -16,7 +16,10 @@
         <li class="<?php if($pg_name=='vendorlist.php'){echo('active');} ?>" >
           <a href="vendor.php" ><i class="fa fa-desktop"></i><span> Vendor Management</span> </a>
         </li>
-        <li class="<?php if($pg_name=='sales_report.php'){echo('active');} ?>" >
+        
+        <?php if($u_id==1){
+                  ?>
+                  <li class="<?php if($pg_name=='sales_report.php'){echo('active');} ?>" >
           <a href="sales_report.php" ><img src="assets/img/icons/sale.svg" alt="img"><span> Sales Report</span> </a>
         </li>
        
@@ -35,6 +38,9 @@
         </li>
 
       </ul>
+
+      <?php
+                } ?>
     </div>
   </div>
 </div>

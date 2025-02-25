@@ -116,7 +116,7 @@ $stmt->close();
                     </thead>
                     <tbody>
                         <?php
-                        $sqlProducts = "SELECT p.barcode, p.quantity, p.price, c.name AS category_name, p.name FROM tbl_product p LEFT JOIN tbl_category c ON p.category_id = c.id WHERE p.vendor_id = ?";
+                        $sqlProducts = "SELECT p.barcode, p.quantity, p.cost_price, c.name AS category_name, p.name FROM tbl_product p LEFT JOIN tbl_category c ON p.category_id = c.id WHERE p.vendor_id = ?";
                         $stmt = $conn->prepare($sqlProducts);
                         $stmt->bind_param("i", $vendor_id);
                         $stmt->execute();

@@ -8,7 +8,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $expense_date = $_POST['expense_date'];
 
     // If category is 'vendor', get the vendor_id
-    $vendor_id = isset($_POST['vendor_id']) ? $_POST['vendor_id'] : null;
+    if ($category == 'petty_cash') {
+        // Set vendor_id to 0 if category is petty_cash
+        $vendor_id = 0;
+    } else {
+        // Otherwise, get the vendor_id from the POST data
+        $vendor_id = $_POST['vendor_id'];
+    }
 
     // Validate required fields
     if (empty($amount) || empty($description) || empty($category) || empty($expense_date)) {

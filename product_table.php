@@ -70,9 +70,18 @@ $totVal=0;
               <td><?= $row['price']; ?></td>
 
               <td>
+                <?php if($u_id==1){
+                  ?>
                   <button class="btn btn-primary" onclick="openQuantityModalReduce(<?= $id ?>)">-</button>
+                  
+                  <?php
+                } ?>
                   <span id="qty_<?= $row['id'] ?>"><?= currentStockCount($conn,$row['id']) ?></span>
+                  <?php if($u_id==1){
+                  ?>
                   <button class="btn btn-primary" onclick="openQuantityModal(<?= $id ?>)">+</button>
+                  <?php
+                } ?>
                   
 
               </td>

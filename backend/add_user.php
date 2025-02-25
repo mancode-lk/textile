@@ -3,11 +3,10 @@ include 'conn.php';
 
 $name = mysqli_real_escape_string($conn, $_REQUEST['name']);
 $pass = mysqli_real_escape_string($conn, $_REQUEST['password']);
-$sale = mysqli_real_escape_string($conn, $_REQUEST['sale_point']);
 
 
 
-  $sqlDeleteAd= "INSERT INTO tbl_user (username,password,sale_point) VALUES ('$name','$pass','$sale')";
+  $sqlDeleteAd= "INSERT INTO tbl_user (username,password) VALUES ('$name','$pass')";
   $rsDelAd = $conn->query($sqlDeleteAd);
 
 

@@ -10,6 +10,7 @@
     <tr>
       <th>Reference Number</th>
       <th>Customer Name</th>
+      <th>Customer Phone</th>
       <th>Date</th>
       <th>Payment Type</th>
       <th>Total Bill</th>

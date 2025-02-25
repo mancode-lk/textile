@@ -5,10 +5,10 @@ include './backend/conn.php';
 $search_query = isset($_GET['search']) ? $_GET['search'] : '';
 
 // Modify the SQL query to include a search filter for customer name or reference number
-$sql = "SELECT g.*, c.c_name 
+$sql = "SELECT g.*, c.c_name, c.c_phone
         FROM tbl_order_grm g
         LEFT JOIN tbl_customer c ON g.customer_id = c.c_id
-        WHERE g.order_ref LIKE '%$search_query%' OR c.c_name LIKE '%$search_query%'
+        WHERE g.order_ref LIKE '%$search_query%' OR c.c_name LIKE '%$search_query%' OR c.c_phone LIKE '%$search_query%'
         ORDER BY g.id DESC";
     
 $rs = $conn->query($sql);
@@ -18,12 +18,17 @@ if ($rs->num_rows > 0) {
     while ($row = $rs->fetch_assoc()) {
         $ref = intval($row['id']); // Ensure ID is always an integer
         $customer = htmlspecialchars($row['c_name'] ?? 'N/A');
+        $customerPhone = htmlspecialchars($row['c_phone'] ?? 'N/A');
         ?>
         <tr>
             <td><?= htmlspecialchars($row['order_ref']) ?></td>
             <td><?= $customer ?></td>
+            <td><?= $customerPhone ?></td>
             <td><?= htmlspecialchars($row['order_date']) ?></td>
-            <td><?= htmlspecialchars(getPayment($row['payment_type'])) ?></td>
+            <td style="color: <?= ($row['payment_type'] == "3") ? 'red' : 'black' ?>;">
+    <?= htmlspecialchars(getPayment($row['payment_type'])) ?>
+</td>
+
 
             <?php
             // Calculate Discounted Total in a Single Query

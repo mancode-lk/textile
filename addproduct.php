@@ -120,8 +120,8 @@
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label class="form-label fw-bold">Quantity</label>
-                                <input name="quantity" type="number" value="1" 
-                                       class="form-control" min="1" required>
+                                <input name="quantity" type="number" value="0" 
+                                       class="form-control" min="0" required readonly>
                             </div>
                         </div>
 
