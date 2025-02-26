@@ -7,7 +7,6 @@ $u_id=$_SESSION['u_id'];
 $limit = 5; // Products per page
 $page = isset($_GET['page']) ? $_GET['page'] : 1;
 $offset = ($page - 1) * $limit;
-
 // Get Total Products Count
 $sql_count = "SELECT COUNT(*) AS total FROM tbl_product";
 $result_count = $conn->query($sql_count);
@@ -16,48 +15,54 @@ $total_records = $row_count['total'];
 $total_pages = ceil($total_records / $limit);
 
 // Fetch Products with Pagination
-$sql = "SELECT p.name AS product_name, p.price 
-        FROM tbl_product p
-        LEFT JOIN tbl_category c ON p.category_id = c.id
-        ORDER BY p.id DESC LIMIT $offset, $limit";
+$sql = "SELECT name AS product_name, price FROM tbl_product ORDER BY id DESC LIMIT $offset, $limit";
 $rs = $conn->query($sql);
 
 // Calculate Total Stock Value
 $stock_value = 0;
-$sql_products = "SELECT * FROM tbl_product";
+$sql_products = "SELECT id, price, stock FROM tbl_product";
 $rs_prod = $conn->query($sql_products);
-if ($rs_prod->num_rows > 0) {
-    while ($rowProd = $rs_prod->fetch_assoc()) {
-        $prod_id = $rowProd['id'];
-        $price = $rowProd['price'];
-        $tot_qnty = currentStockCount($conn, $prod_id);
-        $stock_value += $price * $tot_qnty;
-    }
+while ($rowProd = $rs_prod->fetch_assoc()) {
+    $p_id=$rowProd['id'];
+    $stock_value += $rowProd['price'] * currentStockCount($conn,$p_id);
 }
 
 // Fetch Today's Sales Total
 $tot_bill_dis_today = 0;
 $today_date = date("Y-m-d");
 
-$sql_today_sales = "SELECT * FROM tbl_order WHERE DATE(bill_date) = '$today_date'";
+$sql_today_sales = "
+    SELECT o.grm_ref, o.quantity, p.price, g.discount_price
+    FROM tbl_order o
+    JOIN tbl_product p ON o.product_id = p.id
+    JOIN tbl_order_grm g ON o.grm_ref = g.id
+    WHERE DATE(g.order_date) = '$today_date'";
+
 $rs_today_sales = $conn->query($sql_today_sales);
-if ($rs_today_sales->num_rows > 0) {
-    while ($row = $rs_today_sales->fetch_assoc()) {
-        $discount = $row['discount'];
-        $p_price = $row['m_price'];
+$order_totals_today = [];
 
-        if ($discount != 0) {
-            $d_type = $row['discount_type'];
-            $dis_amount = ($d_type == "p") ? ($p_price * $discount) / 100 : $discount;
-            $p_price -= floor($dis_amount);
-        }
+while ($row = $rs_today_sales->fetch_assoc()) {
+    $grm_ref = $row['grm_ref'];
+    $quantity = $row['quantity'];
+    $price = $row['price'];
+    $discount = $row['discount_price'];
 
-        $tot_bill_dis_today += $row['quantity'] * $p_price;
+    // Track total purchase amount per order reference
+    if (!isset($order_totals_today[$grm_ref])) {
+        $order_totals_today[$grm_ref] = ['total_price' => 0, 'discount' => $discount];
     }
+    $order_totals_today[$grm_ref]['total_price'] += ($quantity * $price);
 }
 
+foreach ($order_totals_today as $order) {
+    $total_price = $order['total_price'];
+    $discount = $order['discount'];
 
-// Calculate Total Cost of All Products (Cost Price * Total Quantity)
+    // Apply discount proportionally across the order
+    $tot_bill_dis_today += ($total_price - $discount);
+}
+
+// Calculate Total Cost of All Products
 $total_cost_price = 0;
 $sql_total_cost = "
     SELECT p.id, p.cost_price, 
@@ -67,45 +72,53 @@ $sql_total_cost = "
     GROUP BY p.id, p.cost_price";
 
 $rs_total_cost = $conn->query($sql_total_cost);
-
-if ($rs_total_cost->num_rows > 0) {
-    while ($row = $rs_total_cost->fetch_assoc()) {
-        $total_cost_price += $row['cost_price'] * $row['total_quantity'];
-    }
+while ($row = $rs_total_cost->fetch_assoc()) {
+    $total_cost_price += $row['cost_price'] * $row['total_quantity'];
 }
 
 // Fetch Today's Expenses
-$tot_expenses_today = 0;
-$sql_today_expenses = "SELECT * FROM tbl_expenses WHERE DATE(expense_date) = '$today_date'";
+$sql_today_expenses = "SELECT SUM(amount) AS total FROM tbl_expenses WHERE DATE(expense_date) = '$today_date'";
 $rs_today_expenses = $conn->query($sql_today_expenses);
-if ($rs_today_expenses->num_rows > 0) {
-    while ($row_expense = $rs_today_expenses->fetch_assoc()) {
-        $tot_expenses_today += $row_expense['amount'];
-    }
-}
+$row_expense = $rs_today_expenses->fetch_assoc();
+$tot_expenses_today = $row_expense['total'] ?? 0;
 
 // Fetch Total Sales Value
 $tot_bill_dis = 0;
-$sql_orders = "SELECT * FROM tbl_order";
+$sql_orders = "
+    SELECT o.grm_ref, o.quantity, p.price, g.discount_price
+    FROM tbl_order o
+    JOIN tbl_product p ON o.product_id = p.id
+    JOIN tbl_order_grm g ON o.grm_ref = g.id";
+
 $rs_orders = $conn->query($sql_orders);
-if ($rs_orders->num_rows > 0) {
-    while ($row_order = $rs_orders->fetch_assoc()) {
-        $discount = $row_order['discount'];
-        $p_price = $row_order['m_price'];
+$order_totals = [];
 
-        if ($discount != 0) {
-            $d_type = $row_order['discount_type'];
-            $dis_amount = ($d_type == "p") ? ($p_price * $discount) / 100 : $discount;
-            $p_price -= floor($dis_amount);
-        }
+while ($row_order = $rs_orders->fetch_assoc()) {
+    $grm_ref = $row_order['grm_ref'];
+    $quantity = $row_order['quantity'];
+    $price = $row_order['price'];
+    $discount = $row_order['discount_price'];
 
-        $tot_bill_dis += $row_order['quantity'] * $p_price;
+    // Track total purchase amount per order reference
+    if (!isset($order_totals[$grm_ref])) {
+        $order_totals[$grm_ref] = ['total_price' => 0, 'discount' => $discount];
     }
+    $order_totals[$grm_ref]['total_price'] += ($quantity * $price);
+}
+
+$tot_bill_dis = 0;
+
+foreach ($order_totals as $order) {
+    $total_price = $order['total_price'];
+    $discount = $order['discount'];
+
+    // Apply discount proportionally across the order
+    $tot_bill_dis += ($total_price - $discount);
 }
 
 $till_balance_today = $tot_bill_dis_today - $tot_expenses_today;
 
-
+// Calculate Payment Breakdown for Today
 $total_payments_today = [
     'cash' => 0,
     'online' => 0,
@@ -113,42 +126,33 @@ $total_payments_today = [
     'credit' => 0
 ];
 
-$sql_payment_today = " SELECT 
-        g.payment_type,
-        SUM(
-            CASE 
-                WHEN o.discount_type = 'p' THEN (o.m_price - (o.m_price * o.discount / 100)) * o.quantity
-                WHEN o.discount_type = 'f' THEN (o.m_price - o.discount) * o.quantity
-                ELSE o.m_price * o.quantity
-            END
-        ) AS total_received
+$sql_payment_today = "
+    SELECT g.payment_type, 
+           SUM((p.price * o.quantity) - (g.discount_price * (p.price * o.quantity) / sub.total_purchase)) AS total_received
     FROM tbl_order o
-    JOIN tbl_order_grm g ON g.id = o.grm_ref  -- Ensure correct linking
-    WHERE DATE(g.order_date) = CURDATE()  -- Filter today's transactions
+    JOIN tbl_order_grm g ON g.id = o.grm_ref
+    JOIN tbl_product p ON o.product_id = p.id
+    JOIN (
+        SELECT o.grm_ref, SUM(p.price * o.quantity) AS total_purchase
+        FROM tbl_order o
+        JOIN tbl_product p ON o.product_id = p.id
+        GROUP BY o.grm_ref
+    ) sub ON sub.grm_ref = g.id
+    WHERE DATE(g.order_date) = CURDATE()
     GROUP BY g.payment_type";
 
-$rs_payment_today = $conn->query($sql_payment_today);
 
-if ($rs_payment_today->num_rows > 0) {
-    while ($row = $rs_payment_today->fetch_assoc()) {
-        switch ($row['payment_type']) {
-            case 0:
-                $total_payments_today['cash'] = $row['total_received'];
-                break;
-            case 1:
-                $total_payments_today['online'] = $row['total_received'];
-                break;
-            case 2:
-                $total_payments_today['bank'] = $row['total_received'];
-                break;
-            case 3:
-                $total_payments_today['credit'] = $row['total_received'];
-                break;
-        }
+$rs_payment_today = $conn->query($sql_payment_today);
+while ($row = $rs_payment_today->fetch_assoc()) {
+    switch ($row['payment_type']) {
+        case 0: $total_payments_today['cash'] = $row['total_received']; break;
+        case 1: $total_payments_today['online'] = $row['total_received']; break;
+        case 2: $total_payments_today['bank'] = $row['total_received']; break;
+        case 3: $total_payments_today['credit'] = $row['total_received']; break;
     }
 }
 
-$till_ballance=$total_payments_today['cash']-$tot_expenses_today;
+$till_balance = $total_payments_today['cash'] - $tot_expenses_today;
 
 ?>
 
@@ -245,7 +249,7 @@ if($u_id==1){
             <div class="card shadow-sm">
                 <div class="card-body text-center py-3">
                     <i class="ri-wallet-3-line mb-2" style="font-size: 30px;"></i>
-                    <h5>Rs.<?= number_format($till_ballance) ?>/-</h5>
+                    <h5>Rs.<?= number_format($till_balance) ?>/-</h5>
                     <h6 class="text-muted">Till Balance</h6>
                 </div>
             </div>

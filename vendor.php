@@ -344,19 +344,43 @@ function printAllBarcodes() {
 
 
 function submitPurchase() {
-    const vendor = document.getElementById('vendor_id').value;
-    if (!vendor) {
-        alert('Please select a vendor.');
+    const vendorId = document.getElementById('vendor_id').value;
+    const purchaseDate = document.getElementById('purchase_date').value;
+    
+    if (!vendorId) {
+        alert('Please select a vendor');
         return;
     }
-    
+
     if (purchaseItems.length === 0) {
-        alert('Please add at least one product to the purchase.');
+        alert('Please add at least one item');
         return;
     }
-    
-    // Submit purchase data logic
-    alert('Purchase finalized successfully!');
+
+    const formData = new FormData();
+    formData.append('vendor_id', vendorId);
+    formData.append('purchase_date', purchaseDate);
+    formData.append('items', JSON.stringify(purchaseItems));
+
+    fetch('./backend/save_purchase.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Purchase saved successfully!');
+            purchaseItems = [];
+            updatePurchaseTable();
+            document.getElementById('vendor_id').value = '';
+        } else {
+            alert('Error: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while saving the purchase');
+    });
 }
 
 </script>

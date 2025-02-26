@@ -1,4 +1,5 @@
 <?php include './backend/conn.php'; ?>
+<?php $u_id=$_SESSION['u_id']; ?>
 <div class="row mt-4">
     <div class="col-md-4">
         <input type="text" id="searchBox" class="form-control" placeholder="Search by Name or Contact">

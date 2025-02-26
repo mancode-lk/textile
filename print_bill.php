@@ -43,7 +43,7 @@ $pay_st   = $rowGrm['pay_st'];
       font-size: 12px;
       margin: 0;
       padding: 0;
-      font-family: 'Courier New', Courier, monospace; /* Monospace font for better readability */
+      font-family: 'Courier New', Courier, monospace;
     }
     .logo-container img {
       width: 60mm;
@@ -52,6 +52,18 @@ $pay_st   = $rowGrm['pay_st'];
     }
     .header, .store-details, .invoice-details, .totals, .customer-details, .footer {
       text-align: center;
+    }
+    .content-container {
+      display: flex;
+      justify-content: space-between;
+    }
+    .customer-details {
+      width: 40%;
+      text-align: left;
+    }
+    .billing-details {
+      width: 55%;
+      text-align: left;
     }
     .items-table {
       width: 100%;
@@ -88,39 +100,50 @@ $pay_st   = $rowGrm['pay_st'];
     <div>Invoice #: <?= $order_ref ?></div>
     <div>Payment: <?= $payment_type ?></div>
   </div>
-  <table class="items-table">
-    <thead>
-      <tr>
-        <th style="width:10%;">Qty</th>
-        <th style="width:40%;">Product</th>
-        <th style="width:25%;">Unit Price</th>
-        <th style="width:25%;">Total</th>
-      </tr>
-    </thead>
-    <tbody>
-      <?php
-      $sql_ord = "SELECT * FROM tbl_order WHERE grm_ref='$billId'";
-      $rs_ord = $conn->query($sql_ord);
-      $total = 0;
-      if ($rs_ord->num_rows > 0) {
-        while ($rowOrd = $rs_ord->fetch_assoc()) {
-          $pid      = $rowOrd['product_id'];
-          $p_name   = getDataBack($conn, 'tbl_product', 'id', $pid, 'name');
-          $p_price  = getDataBack($conn, 'tbl_product', 'id', $pid, 'price');
-          $quantity = $rowOrd['quantity'];
-          $line_total = $p_price * $quantity;
-          $total += $line_total;
-          $tot_qnty += $quantity;
-      ?>
-      <tr>
-        <td><?= $quantity ?></td>
-        <td><?= $p_name ?></td>
-        <td>Rs <?= number_format($p_price) ?>/-</td>
-        <td>Rs <?= number_format($line_total) ?>/-</td>
-      </tr>
-      <?php } } ?>
-    </tbody>
-  </table>
+  <div class="content-container">
+    <div class="customer-details">
+      <div><strong>Customer Details</strong></div>
+      <div><?= $cus_name ?></div>
+      <div><?= $cus_address ?></div>
+      <div><?= $cus_phone ?></div>
+      <div><?= $cus_email ?></div>
+    </div>
+    <div class="billing-details">
+      <table class="items-table">
+        <thead>
+          <tr>
+            <th style="width:10%;">Qty</th>
+            <th style="width:40%;">Product</th>
+            <th style="width:25%;">Unit Price</th>
+            <th style="width:25%;">Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          <?php
+          $sql_ord = "SELECT * FROM tbl_order WHERE grm_ref='$billId'";
+          $rs_ord = $conn->query($sql_ord);
+          $total = 0;
+          if ($rs_ord->num_rows > 0) {
+            while ($rowOrd = $rs_ord->fetch_assoc()) {
+              $pid      = $rowOrd['product_id'];
+              $p_name   = getDataBack($conn, 'tbl_product', 'id', $pid, 'name');
+              $p_price  = getDataBack($conn, 'tbl_product', 'id', $pid, 'price');
+              $quantity = $rowOrd['quantity'];
+              $line_total = $p_price * $quantity;
+              $total += $line_total;
+              $tot_qnty += $quantity;
+          ?>
+          <tr>
+            <td><?= $quantity ?></td>
+            <td><?= $p_name ?></td>
+            <td>Rs <?= number_format($p_price) ?>/-</td>
+            <td>Rs <?= number_format($line_total) ?>/-</td>
+          </tr>
+          <?php } } ?>
+        </tbody>
+      </table>
+    </div>
+  </div>
   <div class="totals">
     <div>Total Quantity: <?= $tot_qnty ?></div>
     <div>Subtotal: Rs <?= number_format($total) ?>/-</div>
@@ -129,19 +152,10 @@ $pay_st   = $rowGrm['pay_st'];
     <?php } ?>
     <div><strong>Total: Rs <?= number_format($total - $discount_price) ?>/-</strong></div>
   </div>
-  <div class="customer-details">
-    <div><strong>Billing Details</strong></div>
-    <?php if ($cus_id != 0) { ?>
-      <div><?= $cus_name ?></div>
-      <div><?= $cus_address ?></div>
-      <div><?= $cus_phone ?></div>
-      <div><?= $cus_email ?></div>
-    <?php } else { ?>
-      <div>Walk-in Customer</div>
-    <?php } ?>
-  </div>
   <div class="footer">
-    <div>Thank you for your purchase!</div>
+    <div>
+    <p>Exchange of any item in its original condition with receipt is possible within 7 days </p>
+    <p>Thank you! Come again.</p></div>
   </div>
   <script>
     window.onload = function() {
