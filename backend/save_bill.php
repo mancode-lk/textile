@@ -19,6 +19,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     if ($rs > 0) {
       unset($_SESSION['grm_ref']);
+      unset($_SESSION['c_id']);
         echo 200; // Success response
     } else {
         echo 500;
