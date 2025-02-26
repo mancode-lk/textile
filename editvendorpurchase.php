@@ -9,6 +9,52 @@ if (!isset($_SESSION['user_logged'])) {
     header('location:./signin.php');
     exit();
 }
+
+$vendor_id = $_GET['vendor_id'] ?? null;
+$purchase_id = $_GET['purchase_id'] ?? null;
+
+if (!$purchase_id || !$vendor_id) {
+    die(json_encode(["error" => "Invalid request"]));
+}
+
+// Modified SQL query with proper field selection
+$query = "SELECT 
+            pi.product_id,
+            p.name,
+            pi.unit_price,
+            pi.quantity,
+            p.price AS selling_price,
+            pi.grm_ref,
+            MAX(e.barcode) AS barcode  -- Aggregate function for barcode
+          FROM tbl_purchase_items pi
+          JOIN tbl_product p ON pi.product_id = p.id
+          JOIN tbl_purchases pu ON pi.purchase_id = pu.purchase_id
+          LEFT JOIN tbl_expiry_date e ON pi.product_id = e.product_id
+          WHERE pi.purchase_id = ?
+            AND pu.vendor_id = ?
+          GROUP BY pi.product_id";  
+
+$stmt = $conn->prepare($query);
+$stmt->bind_param("ii", $purchase_id, $vendor_id);
+$stmt->execute();
+$result = $stmt->get_result();
+
+$data = [];
+while ($row = $result->fetch_assoc()) {
+    $data[] = [
+        'id' => $row['product_id'],
+        'name' => $row['name'],
+        'unit_price' => $row['unit_price'],
+        'quantity' => $row['quantity'],
+        'selling_price' => $row['selling_price'],
+        'barcode' => $row['barcode'],
+        'grm_ref' => $row['grm_ref']
+    ];
+}
+$stmt->close();
+// header('Content-Type: application/json');
+// echo json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_NUMERIC_CHECK);
+// exit();
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -159,9 +205,10 @@ if (!isset($_SESSION['user_logged'])) {
                                     <?php
                                         $vendors = $conn->query("SELECT * FROM tbl_vendors");
                                         while($vendor = $vendors->fetch_assoc()): ?>
-                                    <option value="<?= $vendor['vendor_id'] ?>">
-                                        <?= htmlspecialchars($vendor['vendor_name']) ?>
-                                    </option>
+                                    <option value="<?= $vendor['vendor_id'] ?>" 
+    <?= ($vendor_id == $vendor['vendor_id']) ? 'selected' : '' ?>>
+    <?= htmlspecialchars($vendor['vendor_name']) ?>
+</option>
                                     <?php endwhile; ?>
                                 </select>
                             </div>
@@ -218,8 +265,8 @@ if (!isset($_SESSION['user_logged'])) {
                         </div>
 
                         <div class="d-grid gap-2 mt-4">
-                            <button class="btn btn-success btn-lg" onclick="submitPurchase()">
-                                <i class="fas fa-check-circle me-2"></i> Finalize Purchase
+                            <button class="btn btn-warning btn-lg" onclick="updatePurchase()">
+                                <i class="fas fa-check-circle me-2"></i> Update Purchase
                             </button>
                         </div>
                     </div>
@@ -231,7 +278,7 @@ if (!isset($_SESSION['user_logged'])) {
 </div> <!-- End page-wrapper -->
 
 <script>
-let purchaseItems = [];
+
 
 function searchProd() {
     const searchTerm = document.getElementById('search_name').value.trim();
@@ -249,138 +296,102 @@ function searchProd() {
     }
 }
 
-function addToPurchase(productId, productName, price, selling_price, vendorName, vendorId, image = '') {
-    const selectedVendor = document.getElementById('vendor_id').value;
-    
-    if (!selectedVendor) {
-        document.getElementById('vendor_id').value = vendorId;
-    } else if (selectedVendor != vendorId) {
-        alert('❗ This product belongs to another vendor. Please change vendor selection.');
-        return;
-    }
+// Initialize with PHP data
+let purchaseItems = <?= json_encode($data) ?>;
 
-    const existingItem = purchaseItems.find(item => item.id === productId);
-    
-    if (!existingItem) {
-        purchaseItems.push({
-            id: productId,
-            name: productName,
-            price: parseFloat(price),
-            quantity: 1,
-            vendor: vendorName,
-            image: image,
-            selling_price: selling_price,
-            prints: 1  // Default to 1 print
-        });
-    } else {
-        existingItem.quantity++;
-    }
-    
-    updatePurchaseTable();
-    document.getElementById('search_name').value = '';
-    document.getElementById('searchResults').style.display = 'none';
-}
+document.addEventListener("DOMContentLoaded", () => {
+    renderPurchaseItems();
+});
 
-function updatePurchaseTable() {
+function renderPurchaseItems() {
     const tbody = document.getElementById('selectedItems');
-    tbody.innerHTML = '';
     let grandTotal = 0;
 
-    purchaseItems.forEach((item, index) => {
-        const total = item.price * item.quantity;
+    tbody.innerHTML = purchaseItems.map((item, index) => {
+        const total = parseFloat(item.unit_price) * parseInt(item.quantity);
         grandTotal += total;
 
-        tbody.innerHTML += `
+        return `
             <tr>
+                <td>${item.name} <br>${item.barcode}</td>
                 <td>
-                    <div class="d-flex align-items-center gap-3">
-                        <div>
-                            <div class="fw-bold">${item.name}</div>
-                            <small class="text-muted">${item.vendor}</small>
-                        </div>
-                    </div>
+                    <input class="form-control" 
+                        value="${item.unit_price}" 
+                        disabled>
                 </td>
-                <td>Rs ${item.price.toFixed(2)}</td>
-                <td>Rs ${item.selling_price.toFixed(2)}</td>
                 <td>
-                    <input type="number" class="form-control form-control-sm" value="${item.quantity}" onchange="updateQuantity(${index}, event)">
+                    <input class="form-control" 
+                        value="${item.selling_price}" 
+                        disabled>
+                </td>
+                <td>
+                    <input type="number" class="form-control" 
+                        value="${item.quantity}" 
+                        onchange="updateItemField(${index}, 'quantity', this.value)">
                 </td>
                 <td>Rs ${total.toFixed(2)}</td>
                 <td>
-                    <input type="number" class="form-control form-control-sm" value="${item.prints}" onchange="updatePrints(${index}, event)">
+                    <input type="number" class="form-control form-control-sm" 
+                        value="${item.prints}" 
+                        onchange="updatePrints(${index}, event)">
                 </td>
-                <td><button class="btn btn-sm btn-danger" onclick="removeItem(${index})">Remove</button></td>
+                <td>
+                    <button class="btn btn-sm btn-danger" 
+                        onclick="removeItem(${index})">
+                        Remove
+                    </button>
+                </td>
             </tr>
         `;
-    });
+    }).join('');
 
     document.getElementById('grandTotal').textContent = `Rs ${grandTotal.toFixed(2)}`;
 }
 
-function updateQuantity(index, event) {
-    const value = event.target.value;
-    purchaseItems[index].quantity = value;
-    updatePurchaseTable();
+async function updatePurchase() { 
+    const formData = new FormData();
+    formData.append('purchase_id', <?= $purchase_id ?>);
+    formData.append('vendor_id', <?= $vendor_id ?>);
+
+    // Collect updated quantities
+    let updatedItems = purchaseItems.map((item, index) => ({
+        id: item.id,
+        quantity: document.querySelectorAll('input[type="number"]')[index].value,  // Only update quantity
+    }));
+
+    formData.append('items', JSON.stringify(updatedItems));
+
+    try {
+        const response = await fetch('./backend/update_purchase.php', {
+            method: 'POST',
+            body: formData
+        });
+
+        const result = await response.json();
+        if (result.success) {
+            alert('Purchase updated successfully!');
+            window.location.reload();
+        } else {
+            throw new Error(result.message || 'Failed to update purchase');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Error: ' + error.message);
+    }
 }
 
-function updatePrints(index, event) {
-    purchaseItems[index].prints = event.target.value;
+
+function updateItemField(index, field, value) {
+    purchaseItems[index][field] = value;
+    renderPurchaseItems();
 }
 
 function removeItem(index) {
-    purchaseItems.splice(index, 1);
-    updatePurchaseTable();
-}
-
-function printAllBarcodes() {
-    purchaseItems.forEach(item => {
-        const printUrl = `print_barcode.php?id=${item.id}&prints=${item.prints}`;
-        window.open(printUrl, '_blank');
-    });
-}
-
-
-function submitPurchase() {
-    const vendorId = document.getElementById('vendor_id').value;
-    const purchaseDate = document.getElementById('purchase_date').value;
-    
-    if (!vendorId) {
-        alert('Please select a vendor');
-        return;
+    if(confirm('Are you sure you want to remove this item?')) {
+        purchaseItems.splice(index, 1);
+        renderPurchaseItems();
     }
-
-    if (purchaseItems.length === 0) {
-        alert('Please add at least one item');
-        return;
-    }
-
-    const formData = new FormData();
-    formData.append('vendor_id', vendorId);
-    formData.append('purchase_date', purchaseDate);
-    formData.append('items', JSON.stringify(purchaseItems));
-
-    fetch('./backend/save_purchase.php', {
-        method: 'POST',
-        body: formData
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            alert('Purchase saved successfully!');
-            purchaseItems = [];
-            updatePurchaseTable();
-            document.getElementById('vendor_id').value = '';
-        } else {
-            alert('Error: ' + data.message);
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('An error occurred while saving the purchase');
-    });
 }
+
 
 </script>
-
-</body>
-</html>

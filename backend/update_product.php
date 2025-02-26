@@ -18,7 +18,7 @@ if (!$product_id || $product_id < 1) {
 }
 
 // Validate required fields
-$required = ['category_id', 'name', 'quantity', 'unit_id', 'barcode',
+$required = ['category_id', 'name', 'unit_id', 'barcode',
             'cost_price', 'price', 'status', 'vendor_id', 'hs_code'];
 $missing = array_diff($required, array_keys($_POST));
 
@@ -32,7 +32,6 @@ if (!empty($missing)) {
 $user_id = $_SESSION['u_id'];
 $category_id = filter_input(INPUT_POST, 'category_id', FILTER_VALIDATE_INT);
 $name = htmlspecialchars(trim($_POST['name']));
-$quantity = filter_input(INPUT_POST, 'quantity', FILTER_VALIDATE_INT);
 $unit_id = filter_input(INPUT_POST, 'unit_id', FILTER_VALIDATE_INT);
 $barcode = filter_input(INPUT_POST, 'barcode', FILTER_SANITIZE_STRING);
 $cost_price = filter_input(INPUT_POST, 'cost_price', FILTER_VALIDATE_FLOAT);
@@ -42,7 +41,7 @@ $vendor_id = filter_input(INPUT_POST, 'vendor_id', FILTER_VALIDATE_INT);
 $hs_code = filter_input(INPUT_POST, 'hs_code', FILTER_SANITIZE_STRING);
 
 // Validate numeric values
-if ($quantity < 0 || $cost_price <= 0 || $price <= 0) {
+if ($cost_price <= 0 || $price <= 0) {
     $_SESSION['error_cus'] = 'Invalid numeric values provided';
     header("Location: ../editproduct.php?id=$product_id");
     exit();
@@ -80,12 +79,12 @@ try {
 
     // Update main product
     $stmt = $conn->prepare("UPDATE tbl_product SET
-        category_id = ?, name = ?, unit = ?, quantity = ?, price = ?,
+        category_id = ?, name = ?, unit = ?, price = ?,
         cost_price = ?, status = ?, vendor_id = ?
         WHERE id = ?");
     
-    $stmt->bind_param("isiiidiii", 
-        $category_id, $name, $unit_id, $quantity,
+    $stmt->bind_param("isiidiii", 
+        $category_id, $name, $unit_id,
         $price, $cost_price, $status, $vendor_id, $product_id
     );
     
@@ -93,27 +92,7 @@ try {
         throw new Exception('Failed to update product');
     }
 
-    // Update expiry date record
-    $stmt = $conn->prepare("UPDATE tbl_expiry_date 
-                          SET quantity = ?
-                          WHERE product_id = ?");
-    $stmt->bind_param("ii", $quantity, $product_id);
-    $stmt->execute();
-
-    // Update stock record
-    $stmt = $conn->prepare("UPDATE tbl_stock 
-                          SET stock = ?
-                          WHERE p_id = ?");
-    $stmt->bind_param("ii", $quantity, $product_id);
-    $stmt->execute();
-
-    // Update quantity record
-    $stmt = $conn->prepare("UPDATE tbl_quantity 
-                          SET quantity = ?
-                          WHERE p_id = ?");
-    $stmt->bind_param("ii", $quantity, $product_id);
-    $stmt->execute();
-
+    // Commit transaction
     $conn->commit();
 
     // Handle redirect

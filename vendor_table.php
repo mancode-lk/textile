@@ -56,10 +56,10 @@
       <tr>
         <td><?= htmlspecialchars($row['vendor_name']) ?></td>
         <td><?= htmlspecialchars($row['phone']) ?></td>
-        <td><?= number_format($total_purchase, 2) ?></td> <!-- Total Amount Owed -->
-        <td><?= number_format($total_expense, 2) ?></td> <!-- Total Paid -->
-        <td><?= number_format($total_discount, 2) ?></td> <!-- Discounts Applied -->
-        <td><?= number_format($remaining_balance, 2) ?></td> <!-- Remaining Balance -->
+        <td><?= number_format($total_purchase, 0) ?></td> <!-- Total Amount Owed -->
+        <td><?= number_format($total_expense, 0) ?></td> <!-- Total Paid -->
+        <td><?= number_format($total_discount, 0) ?></td> <!-- Discounts Applied -->
+        <td><?= number_format($remaining_balance, 0) ?></td> <!-- Remaining Balance -->
         <td>
           <a class="me-3" href="vendor_details.php?vendor_id=<?= $vendor_id ?>"><img src="assets/img/icons/eye.svg" alt="View"></a>
           <?php

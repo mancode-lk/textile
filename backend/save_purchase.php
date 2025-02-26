@@ -48,8 +48,8 @@ try {
                           VALUES (?, ?, ?, ?, ?)");
 
     $expiryStmt = $conn->prepare("INSERT INTO tbl_expiry_date 
-                          (product_id, quantity, barcode, grm_ref,vendor_id) 
-                          VALUES (?, ?, ?, ?,?)");
+                          (product_id, quantity, barcode, grm_ref,vendor_id,purchase_Id) 
+                          VALUES (?, ?, ?, ?,?,?)");
 
     $updateStmt = $conn->prepare("UPDATE tbl_product 
                                      SET quantity = quantity + ? 
@@ -78,12 +78,13 @@ try {
         $purchaseItemStmt->execute();
 
         // Insert into expiry date (tbl_expiry_date)
-        $expiryStmt->bind_param("iisii", 
+        $expiryStmt->bind_param("iisiii", 
             $item['id'], 
             $item['quantity'], 
             $barcode,  
             $grmRef ,
-            $vendorId  
+            $vendorId,
+            $purchaseId  
         );
         $expiryStmt->execute();
 
