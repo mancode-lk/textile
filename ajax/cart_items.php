@@ -35,10 +35,11 @@ if ($rs->num_rows > 0) {
                         <div>Stock: <span class="fw-bold"><?= $currentStock ?></span> <?= $stockBadge ?></div>
                     </div>
                     <div class="d-flex align-items-center">
-                        <input type="number" value="<?= (int) $qty ?>" min="1"
-                               onkeyup="updateQnty(<?= $id ?>, this.value)"
-                               class="form-control form-control-sm me-2 quantity-input"
-                               style="width: 80px;" />
+                      <input type="number" value="<?= (int) $qty ?>" min="1"
+     oninput="updateQnty(<?= $id ?>, this.value)"
+     class="form-control form-control-sm me-2 quantity-input"
+     style="width: 80px;" />
+
                         <span class="fw-bold me-2">LKR <?= number_format($p_price * $qty, 2) ?></span>
                         <button class="btn btn-sm btn-danger" onclick="del_item_cart(<?= $id ?>)">
                             <i class="fas fa-trash-alt"></i>

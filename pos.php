@@ -1,29 +1,24 @@
-
 <?php
   include 'backend/conn.php';
 
-  if(!isset($_SESSION['grm_ref'])){
-    $order_ref =generateOrderRef($conn);
-    $sqlCreate ="INSERT INTO tbl_order_grm (order_ref,order_st) VALUES('$order_ref',0)";
-    $rsCreate=$conn->query($sqlCreate);
+  if (!isset($_SESSION['grm_ref'])) {
+      $order_ref = generateOrderRef($conn);
+      $sqlCreate = "INSERT INTO tbl_order_grm (order_ref, order_st) VALUES ('$order_ref', 0)";
+      $rsCreate = $conn->query($sqlCreate);
 
-    $grm_id=$conn->insert_id;
-    $_SESSION['grm_ref'] =$grm_id;
+      $grm_id = $conn->insert_id;
+      $_SESSION['grm_ref'] = $grm_id;
+  } else {
+      $grm_id = $_SESSION['grm_ref'];
   }
-  else {
-    $grm_id=$_SESSION['grm_ref'];
-  }
- ?>
-
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>POS System</title>
-
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
-
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
   <style>
     .scrollable {
@@ -42,12 +37,11 @@
     <header class="mb-4">
       <a href="pos_grm.php" class="btn btn-outline-dark btn-lg px-4 py-2 fw-bold shadow-sm">
          <i class="fas fa-receipt me-2"></i> GO TO BILLS
-     </a>
+      </a>
       <h1 class="text-center text-primary">
         <i class="fas fa-store me-2"></i> POS System BILL ID: 00<?= $grm_id ?>
       </h1>
     </header>
-
 
     <!-- Two-column layout: Left = Cart Summary & Bill, Right = Product Search -->
     <div class="row g-4">
@@ -71,9 +65,7 @@
               </div>
             </div>
             <div class="list-group scrollable mb-4" id="showCartItems">
-              <!-- Cart Item 1 -->
-
-              <!-- Additional cart items can be added here -->
+              <!-- Cart items will be loaded here -->
             </div>
 
             <!-- Bill Details -->
@@ -88,7 +80,7 @@
               </div>
               <!-- Total -->
               <div class="col-6 text-end" id="totalValue">
-
+                <!-- Bill total will be loaded here -->
               </div>
             </div>
             <hr />
@@ -117,7 +109,7 @@
                   </div>
                 </div>
               </div>
-              <input type="hidden" id="totPrice" name="" value="">
+              <input type="hidden" id="totPrice" value="">
               <!-- Amount Paid -->
               <div class="col-md-4">
                 <label class="form-label">
@@ -139,10 +131,10 @@
             <hr>
             <div class="row">
               <div class="col-lg-6">
-                <button type="button" class="btn btn-primary btn-sm" id="complete_bill" name="button">Complete Bill</button>
+                <button type="button" class="btn btn-primary btn-sm" id="complete_bill">Complete Bill</button>
               </div>
               <div class="col-lg-6">
-                <button type="button" class="btn btn-secondary btn-sm" id="add_to_draft" name="button">Add to Draft</button>
+                <button type="button" class="btn btn-secondary btn-sm" id="add_to_draft">Add to Draft</button>
               </div>
             </div>
           </div>
@@ -201,268 +193,95 @@
             <!-- Search Results (Scrollable) -->
             <div class="mt-4 scrollable-results">
               <ul class="list-group" id="list_item_search">
-                <!-- Search Result Item 1 -->
-
-                <!-- Additional search results can be appended here -->
+                <!-- Search results will be loaded here -->
               </ul>
             </div>
           </div>
         </div>
       </div>
-
     </div><!-- /.row -->
   </div><!-- /.container -->
 
   <!-- Bootstrap 5 JS Bundle -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <!-- jQuery (Required for AJAX) -->
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 </body>
 </html>
 
 <script type="text/javascript">
-$(document).ready(function () {
-    let barcode = "";
-
-    $("#barcodeInput").on("keypress", function (event) {
-        // Check if the pressed key is Enter (barcode scanners usually end with Enter)
+$(document).ready(function() {
+    // Barcode scanning event
+    $("#barcodeInput").on("keypress", function(event) {
         if (event.which === 13) {
-            event.preventDefault(); // Prevent form submission if inside a form
-
-            barcode = $(this).val().trim();
-
+            event.preventDefault();
+            let barcode = $(this).val().trim();
             if (barcode !== "") {
-                cartItemBarcode(barcode); // Call function with scanned barcode
-
+                cartItemBarcode(barcode);
                 setTimeout(() => {
-                    $(this).val(""); // Clear input after 1 second
-                    $(this).focus(); // Keep focus on input
+                    $(this).val("").focus();
                 }, 1000);
             }
         }
     });
-});
 
-$(document).ready(function () {
-    let searchTimeout; // Stores timeout ID
-    let ajaxRequest; // Stores active AJAX request
-
-    $("#searchInput").on("keyup", function () {
-        clearTimeout(searchTimeout); // Reset previous timeout
-
+    // Product search with debouncing
+    let searchTimeout;
+    let searchAjaxRequest;
+    $("#searchInput").on("keyup", function() {
+        clearTimeout(searchTimeout);
         let searchInput = $(this).val().trim();
-
         if (searchInput === "") {
-            $("#list_item_search").html(""); // Clear results if input is empty
+            $("#list_item_search").html("");
             return;
         }
-
-        searchTimeout = setTimeout(function () {
-            // If an AJAX request is still active, abort it
-            if (ajaxRequest) {
-                ajaxRequest.abort();
+        searchTimeout = setTimeout(function() {
+            if (searchAjaxRequest) {
+                searchAjaxRequest.abort();
             }
-
-            ajaxRequest = $.ajax({
+            searchAjaxRequest = $.ajax({
                 type: "POST",
                 url: "ajax/list_item_search.php",
                 data: { skey: searchInput },
-                beforeSend: function () {
-                    $("#list_item_search").html("<p>Loading...</p>"); // Show loading state
+                beforeSend: function() {
+                    $("#list_item_search").html("<p>Loading...</p>");
                 },
-                success: function (response) {
+                success: function(response) {
                     $("#list_item_search").html(response);
                 },
-                error: function (xhr, status, error) {
+                error: function(xhr, status, error) {
                     if (status !== "abort") {
                         console.error("AJAX Error:", error);
                     }
                 }
             });
-        }, 300); // Delay execution by 300ms (adjust if needed)
+        }, 300);
     });
-});
 
-function discountBill(price){
-  $('#totalValue').load('ajax/bill_total.php',{
-    disc_price:price
-  });
-}
-
-
-
-
-function cartItemBarcode(barcode) {
-    $.ajax({
-        url: 'backend/add_item_cart_barcode.php',
-        method: 'POST',
-        data: {
-            bcode: barcode
-        },
-        dataType: "json", // Ensure we parse JSON response correctly
-        success: function (resp) {
-            if (resp.statusCode === 200) {
-                alert("✔ Item Added Successfully!");
-
-                let paid_amount = parseFloat(document.getElementById('paid_amount').value) || 0;
-                if (paid_amount !== 0) {
-                    showBalance();
-                }
-                calculateTotal();
-                $('#showCartItems').load('ajax/cart_items.php');
-            }
-            else if (resp.statusCode === 400) {
-                alert("⚠ " + resp.message); // Shows "Out of stock" or "Product not found"
-            }
-            else {
-                alert("❌ Something went wrong! Please try again.");
-            }
-        },
-        error: function () {
-            alert("❌ Network Error! Failed to add item. Check your connection.");
-        }
-    });
-}
-
-
-function addToOrders(id, qnty) {
-    $.ajax({
-        url: 'backend/add_item_cart.php',
-        method: 'POST',
-        data: {
-            p_id: id,
-            qty: qnty
-        },
-        dataType: "json", // Ensure JSON response
-        success: function (resp) {
-            if (resp.statusCode === 200) {
-                // ✅ Success Alert
-                alert("✔ Item Added Successfully!");
-
-                let paid_amount = parseFloat(document.getElementById('paid_amount').value) || 0;
-                if (paid_amount !== 0) {
-                    showBalance();
-                }
-                calculateTotal();
-                $('#showCartItems').load('ajax/cart_items.php');
-            }
-            else if (resp.statusCode === 400) {
-                // ❌ Error Alert for Stock Issues
-                alert("⚠ " + resp.message); // Displays "Out of stock" or "Only X items left"
-            }
-            else {
-                // ❌ General Error Alert
-                alert("❌ Something went wrong! Please try again.");
-            }
-        },
-        error: function () {
-            // ❌ AJAX Request Failed
-            alert("❌ Network Error! Failed to add item. Check your connection.");
-        }
-    });
-}
-
-
-
-function del_item_cart(id){
-  $.ajax({
-    url:'backend/delete_cart_item.php',
-    method:'POST',
-    data:{
-      order_id:id,
-    },
-    success:function(resp){
-      if(resp == 200){
-        let paid_amount = parseFloat(document.getElementById('paid_amount').value) || 0;
-        if(paid_amount !=0){
-          showBalance();
-        }
-        calculateTotal();
-        $('#showCartItems').load('ajax/cart_items.php');
-      }
-      else {
-        alert('something went wrong');
-      }
-    }
-  });
-}
-
-let updateTimeout;
-let ajaxRequest;
-
-function updateQnty(id, qnty) {
-    clearTimeout(updateTimeout); // Prevent multiple rapid AJAX calls
-
-    updateTimeout = setTimeout(() => {
-        if (ajaxRequest) {
-            ajaxRequest.abort(); // Cancel the previous AJAX request
-        }
-
-        ajaxRequest = $.ajax({
-            url: 'backend/update_qnty.php',
-            method: 'POST',
-            data: { order_id: id, qty: qnty },
-            success: function (resp) {
-                if (resp == 200) {
-                  let paid_amount = parseFloat(document.getElementById('paid_amount').value) || 0;
-                  if(paid_amount !=0){
-                    showBalance();
-                  }
-                  calculateTotal();
-                    $('#showCartItems').load('ajax/cart_items.php');
-                } else {
-                    console.error('Update failed:', resp);
-                }
-            },
-            error: function (xhr, status) {
-                if (status !== "abort") {
-                    console.error('AJAX error:', xhr.responseText);
-                }
-            }
-        });
-    }, 1500); // Debounce delay (adjust as needed)
-}
-
-function calculateTotal(){
-  $('#totalValue').load('ajax/bill_total.php');
-}
-
-
-function showBalance() {
-    let totPrice = parseFloat(document.getElementById('totPrice').value) || 0;
-    let paid_amount = parseFloat(document.getElementById('paid_amount').value) || 0;
-
-    let balance = paid_amount - totPrice;
-
-    document.getElementById('balanceToGive').innerHTML = balance.toFixed(2); // Format to 2 decimal places
-}
-
-$(document).ready(function () {
-    $("#complete_bill").click(function () {
-        let discount_amount = $("#discount_amount").val() || 0; // Get discount amount
-        let payment_method = $("input[name='payment']:checked").val(); // Get selected payment method
-
+    // Complete bill click event
+    $("#complete_bill").click(function() {
+        let discount_amount = $("#discount_amount").val() || 0;
+        let payment_method = $("input[name='payment']:checked").val();
         $.ajax({
             url: "backend/save_bill.php",
             method: "POST",
             data: {
                 discount_amount: discount_amount,
                 payment_method: payment_method,
-                action: "complete_bill" // Identifier for backend
+                action: "complete_bill"
             },
-            beforeSend: function () {
-                $("#complete_bill").prop("disabled", true).text("Processing..."); // Disable button during request
+            beforeSend: function() {
+                $("#complete_bill").prop("disabled", true).text("Processing...");
             },
-            success: function (response) {
+            success: function(response) {
                 if (response == 200) {
-                    window.location.href = "pos_grm.php"; // Redirect on success
+                    window.location.href = "pos_grm.php";
                 } else {
                     alert("Error: " + response);
                     $("#complete_bill").prop("disabled", false).text("Complete Bill");
                 }
             },
-            error: function (xhr, status, error) {
+            error: function(xhr, status, error) {
                 alert("Failed to complete bill. Try again.");
                 $("#complete_bill").prop("disabled", false).text("Complete Bill");
                 console.error(error);
@@ -470,10 +289,10 @@ $(document).ready(function () {
         });
     });
 
-    $("#add_to_draft").click(function () {
+    // Add to draft click event
+    $("#add_to_draft").click(function() {
         let discount_amount = $("#discount_amount").val() || 0;
         let payment_method = $("input[name='payment']:checked").val();
-
         $.ajax({
             url: "backend/save_bill.php",
             method: "POST",
@@ -482,10 +301,10 @@ $(document).ready(function () {
                 payment_method: payment_method,
                 action: "add_to_draft"
             },
-            beforeSend: function () {
+            beforeSend: function() {
                 $("#add_to_draft").prop("disabled", true).text("Saving...");
             },
-            success: function (response) {
+            success: function(response) {
                 if (response == 200) {
                     alert("Bill saved as draft!");
                     window.location.href = "pos_grm.php";
@@ -494,7 +313,7 @@ $(document).ready(function () {
                     $("#add_to_draft").prop("disabled", false).text("Add to Draft");
                 }
             },
-            error: function (xhr, status, error) {
+            error: function(xhr, status, error) {
                 alert("Failed to save draft.");
                 $("#add_to_draft").prop("disabled", false).text("Add to Draft");
                 console.error(error);
@@ -503,8 +322,170 @@ $(document).ready(function () {
     });
 });
 
+// Function to update bill total and store value in hidden totPrice field
+function calculateTotal(){
+    $('#totalValue').load('ajax/bill_total.php', function(response, status, xhr) {
+        $('#totPrice').val(response);
+    });
+}
 
-$('#showCartItems').load('ajax/cart_items.php');
-$('#totalValue').load('ajax/bill_total.php');
+// Function to update total with discount applied and update totPrice field
+function discountBill(price){
+    $('#totalValue').load('ajax/bill_total.php', {disc_price: price}, function(response, status, xhr) {
+        $('#totPrice').val(response);
+    });
+}
 
+// Function to update balance display based on paid amount and total price
+function showBalance() {
+    let totPrice = parseFloat(document.getElementById('totPrice').value) || 0;
+    let paid_amount = parseFloat(document.getElementById('paid_amount').value) || 0;
+    let balance = paid_amount - totPrice;
+    document.getElementById('balanceToGive').innerHTML = balance.toFixed(2);
+}
+
+// Function to add an item to the cart using a barcode
+function cartItemBarcode(barcode) {
+    $.ajax({
+        url: 'backend/add_item_cart_barcode.php',
+        method: 'POST',
+        data: { bcode: barcode },
+        dataType: "json",
+        success: function(resp) {
+            if (resp.statusCode === 200) {
+                alert("✔ Item Added Successfully!");
+                let paid_amount = parseFloat(document.getElementById('paid_amount').value) || 0;
+                if (paid_amount !== 0) {
+                    showBalance();
+                }
+                let discountValue = document.getElementById('discount_amount').value;
+                if (discountValue !== "") {
+                    discountBill(discountValue);
+                }
+                else {
+                  calculateTotal();
+                }
+
+                $('#showCartItems').load('ajax/cart_items.php');
+            } else if (resp.statusCode === 400) {
+                alert("⚠ " + resp.message);
+            } else {
+                alert("❌ Something went wrong! Please try again.");
+            }
+        },
+        error: function() {
+            alert("❌ Network Error! Failed to add item. Check your connection.");
+        }
+    });
+}
+
+// Function to add an item to the order with a specific quantity
+function addToOrders(id, qnty) {
+    $.ajax({
+        url: 'backend/add_item_cart.php',
+        method: 'POST',
+        data: { p_id: id, qty: qnty },
+        dataType: "json",
+        success: function(resp) {
+            if (resp.statusCode === 200) {
+                alert("✔ Item Added Successfully!");
+                let paid_amount = parseFloat(document.getElementById('paid_amount').value) || 0;
+                if (paid_amount !== 0) {
+                    showBalance();
+                }
+                let discountValue = document.getElementById('discount_amount').value;
+                if (discountValue !== "") {
+                    discountBill(discountValue);
+                }
+                else {
+                  calculateTotal();
+                }
+                $('#showCartItems').load('ajax/cart_items.php');
+            } else if (resp.statusCode === 400) {
+                alert("⚠ " + resp.message);
+            } else {
+                alert("❌ Something went wrong! Please try again.");
+            }
+        },
+        error: function() {
+            alert("❌ Network Error! Failed to add item. Check your connection.");
+        }
+    });
+}
+
+// Function to delete an item from the cart
+function del_item_cart(id) {
+    $.ajax({
+        url: 'backend/delete_cart_item.php',
+        method: 'POST',
+        data: { order_id: id },
+        success: function(resp) {
+            if (resp == 200) {
+                let paid_amount = parseFloat(document.getElementById('paid_amount').value) || 0;
+                if (paid_amount !== 0) {
+                    showBalance();
+                }
+                let discountValue = document.getElementById('discount_amount').value;
+                if (discountValue !== "") {
+                    discountBill(discountValue);
+                }
+                else {
+                  calculateTotal();
+                }
+                $('#showCartItems').load('ajax/cart_items.php');
+            } else {
+                alert('Something went wrong');
+            }
+        }
+    });
+}
+
+let updateTimeout;
+let updateAjaxRequest; // renamed to avoid conflicts
+
+// Function to update item quantity with a debounce delay
+function updateQnty(id, qnty) {
+    clearTimeout(updateTimeout);
+    updateTimeout = setTimeout(() => {
+        if (updateAjaxRequest) {
+            updateAjaxRequest.abort();
+        }
+        updateAjaxRequest = $.ajax({
+            url: 'backend/update_qnty.php',
+            method: 'POST',
+            data: { order_id: id, qty: qnty },
+            success: function(resp) {
+                if (resp == 200) {
+                    let paid_amount = parseFloat(document.getElementById('paid_amount').value) || 0;
+                    if (paid_amount !== 0) {
+                        showBalance();
+                    }
+                    let discountValue = document.getElementById('discount_amount').value;
+                    if (discountValue !== "") {
+                        discountBill(discountValue);
+                    }
+                    else {
+                      calculateTotal();
+                    }
+                    $('#showCartItems').load('ajax/cart_items.php');
+                } else {
+                    console.error('Update failed:', resp);
+                }
+            },
+            error: function(xhr, status) {
+                if (status !== "abort") {
+                    console.error('AJAX error:', xhr.responseText);
+                }
+            }
+        });
+    }, 200);
+}
+
+// Initial load of cart items and bill total (with totPrice update)
+$(document).ready(function() {
+    $('#showCartItems').load('ajax/cart_items.php');
+    $('#totalValue').load('ajax/bill_total.php', function(response, status, xhr) {
+        $('#totPrice').val(response);
+    });
+});
 </script>
