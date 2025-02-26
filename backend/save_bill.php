@@ -7,7 +7,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $action = $_POST['action'] ?? '';
     $status = ($action === "complete_bill") ? "1" : "0";
 
-    $sql ="UPDATE tbl_order_grm SET discount_price='$discount_amount',payment_type='$payment_method',order_st='$status' WHERE id='$grm_id'";
+    if(isset($_SESSION['c_id'])){
+      $cid =$_SESSION['c_id'];
+    }
+    else {
+      $cid =0;
+    }
+
+    $sql ="UPDATE tbl_order_grm SET discount_price='$discount_amount',customer_id ='$cid',payment_type='$payment_method',order_st='$status' WHERE id='$grm_id'";
     $rs = $conn->query($sql);
 
     if ($rs > 0) {

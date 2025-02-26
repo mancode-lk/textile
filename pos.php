@@ -35,12 +35,37 @@
   <div class="container my-4">
     <!-- Header -->
     <header class="mb-4">
-      <a href="pos_grm.php" class="btn btn-outline-dark btn-lg px-4 py-2 fw-bold shadow-sm">
-         <i class="fas fa-receipt me-2"></i> GO TO BILLS
-      </a>
-      <h1 class="text-center text-primary">
-        <i class="fas fa-store me-2"></i> POS System BILL ID: 00<?= $grm_id ?>
-      </h1>
+      <div class="row">
+        <div class="col-lg-2">
+          <a href="pos_grm.php" class="btn btn-outline-dark btn-lg px-4 py-2 fw-bold shadow-sm">
+             <i class="fas fa-receipt me-2"></i> GO TO BILLS
+          </a>
+        </div>
+        <div class="col-lg-6">
+          <h1 class="text-center text-primary">
+            <i class="fas fa-store me-2"></i> POS System BILL ID: 00<?= $grm_id ?>
+          </h1>
+        </div>
+        <div class="col-lg-4">
+          <h5 class="text-center text-dark">
+              <span id="selectedCustomerName">No Customer Selected</span>
+          </h5>
+        </div>
+      </div>
+
+
+      <div class="mb-3">
+    <div class="input-group">
+      <select id="customerSelect" class="form-select">
+           <option value="">Select a customer</option>
+           <!-- Customer options will be loaded dynamically -->
+       </select>
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addCustomerModal">
+            <i class="fas fa-user-plus"></i> Add New Customer
+        </button>
+    </div>
+</div>
+
     </header>
 
     <!-- Two-column layout: Left = Cart Summary & Bill, Right = Product Search -->
@@ -149,7 +174,6 @@
           </div>
           <div class="card-body">
             <!-- Search Form -->
-            <form>
               <div class="row g-3">
                 <div class="col-md-6">
                   <label for="searchInput" class="form-label">Product Name or Barcode</label>
@@ -189,7 +213,6 @@
                   </select>
                 </div>
               </div>
-            </form>
             <!-- Search Results (Scrollable) -->
             <div class="mt-4 scrollable-results">
               <ul class="list-group" id="list_item_search">
@@ -201,14 +224,150 @@
       </div>
     </div><!-- /.row -->
   </div><!-- /.container -->
+  <div class="modal fade" id="addCustomerModal" tabindex="-1" aria-labelledby="addCustomerModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="addCustomerModalLabel">Add New Customer</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="customerForm">
+                    <div class="mb-3">
+                        <label for="customerName" class="form-label">Customer Name</label>
+                        <input type="text" id="customerName" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="customerPhone" class="form-label">Phone Number</label>
+                        <input type="text" id="customerPhone" class="form-control">
+                    </div>
+                    <div class="mb-3">
+                        <label for="customerEmail" class="form-label">Email</label>
+                        <input type="email" id="customerEmail" class="form-control">
+                    </div>
+                    <div class="mb-3">
+                        <label for="customerAddress" class="form-label">Address</label>
+                        <textarea id="customerAddress" class="form-control"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="customerCity" class="form-label">City</label>
+                        <input type="text" id="customerCity" class="form-control">
+                    </div>
+                    <button type="submit" class="btn btn-success w-100">Save Customer</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
 
   <!-- Bootstrap 5 JS Bundle -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <!-- jQuery (Required for AJAX) -->
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <!-- Select2 CSS -->
+<link href="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/css/select2.min.css" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/js/select2.min.js"></script>
+
 </body>
 </html>
+<script type="text/javascript">
+$(document).ready(function() {
+    $("#customerSelect").select2({
+        placeholder: "Select a customer",
+        allowClear: true
+    });
 
+    // Capture selection and update the display
+    $("#customerSelect").on("change", function() {
+        var selectedCustomerName = $("#customerSelect option:selected").text();
+        $("#selectedCustomerName").text(selectedCustomerName);
+    });
+});
+
+$(document).ready(function() {
+    // Load customers dynamically
+    function loadCustomers() {
+        $.ajax({
+            url: "ajax/get_customers.php",
+            method: "GET",
+            success: function(response) {
+                let customers = JSON.parse(response);
+                $("#customerSelect").html('<option value="">Select a customer</option>');
+                customers.forEach(customer => {
+                    $("#customerSelect").append(`<option value="${customer.c_id}" data-name="${customer.c_name}">${customer.c_name}</option>`);
+                });
+            },
+            error: function() {
+                console.error("Failed to load customers.");
+            }
+        });
+    }
+
+    loadCustomers(); // Load customers when the page loads
+
+    // Update selected customer name under the bill ID and store customer ID in session
+    $("#customerSelect").change(function() {
+        let selectedCustomerId = $("#customerSelect").val();
+        let selectedCustomerName = $("#customerSelect option:selected").attr("data-name") || "No Customer Selected";
+
+        $("#selectedCustomerName").text(selectedCustomerName);
+
+        if (selectedCustomerId) {
+            $.ajax({
+                url: "backend/set_customer_session.php",
+                method: "POST",
+                data: { c_id: selectedCustomerId },
+                success: function(response) {
+                    if (response == "200") {
+                        console.log("Customer ID stored in session successfully.");
+                    } else {
+                        console.error("Failed to store customer ID in session.");
+                    }
+                },
+                error: function() {
+                    console.error("AJAX error: Could not store customer ID in session.");
+                }
+            });
+        }
+    });
+
+    // Add new customer form submission
+    $("#customerForm").submit(function(event) {
+        event.preventDefault();
+        let name = $("#customerName").val().trim();
+        let phone = $("#customerPhone").val().trim();
+        let email = $("#customerEmail").val().trim();
+        let address = $("#customerAddress").val().trim();
+        let city = $("#customerCity").val().trim();
+
+        if (name === "") {
+            alert("Customer name is required!");
+            return;
+        }
+
+        $.ajax({
+            url: "backend/add_customer.php",
+            method: "POST",
+            data: { name, phone, email, address, city },
+            success: function(response) {
+                if (response == "200") {
+                    alert("Customer added successfully!");
+                    $("#addCustomerModal").modal("hide");
+                    $("#customerForm")[0].reset();
+                    loadCustomers(); // Refresh customer list
+                } else {
+                    alert("Failed to add customer.");
+                }
+            },
+            error: function() {
+                alert("Network error. Please try again.");
+            }
+        });
+    });
+});
+
+</script>
+<!-- end of customers -->
 <script type="text/javascript">
 $(document).ready(function() {
     // Barcode scanning event
@@ -262,6 +421,13 @@ $(document).ready(function() {
     $("#complete_bill").click(function() {
         let discount_amount = $("#discount_amount").val() || 0;
         let payment_method = $("input[name='payment']:checked").val();
+
+        var selectedCustomerName = $("#selectedCustomerName").text().trim();
+        if (selectedCustomerName === "No Customer Selected" && payment_method == 3) {
+            alert("For the credit bill customer details required");
+            return false;
+        }
+
         $.ajax({
             url: "backend/save_bill.php",
             method: "POST",
