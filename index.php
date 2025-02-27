@@ -93,6 +93,21 @@ $sql_orders = "
 $rs_orders = $conn->query($sql_orders);
 $order_totals = [];
 
+
+
+$sqlTotalValue = "SELECT 
+            COALESCE(SUM(amount), 0) AS total_payments,
+            (SELECT COALESCE(SUM(discount_amount), 0) FROM tbl_vendor_discounts) AS total_discounts,
+            (COALESCE(SUM(amount), 0) - (SELECT COALESCE(SUM(discount_amount), 0) FROM tbl_vendor_discounts)) AS total_due
+        FROM tbl_vendor_payments";
+
+$rs_TotalValue = $conn->query($sqlTotalValue);
+$row_total_value = $rs_TotalValue->fetch_assoc();
+
+$total_payments = $row_total_value['total_payments'] ?? 0;
+$total_discounts = $row_total_value['total_discounts'] ?? 0;
+$total_value_price = $row_total_value['total_due'] ?? 0;
+
 while ($row_order = $rs_orders->fetch_assoc()) {
     $grm_ref = $row_order['grm_ref'];
     $quantity = $row_order['quantity'];
@@ -185,6 +200,16 @@ if($u_id==1){
                     <i class="ri-money-dollar-circle-line mb-2" style="font-size: 30px;"></i>
                     <h5>Rs.<?= number_format($total_cost_price) ?>/-</h5>
                     <h6 class="text-muted">Total Cost</h6>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-md-4 col-sm-6 col-12 mb-3">
+            <div class="card shadow-sm">
+                <div class="card-body text-center py-3">
+                    <i class="ri-money-dollar-circle-line mb-2" style="font-size: 30px;"></i>
+                    <h5>Rs.<?= number_format($total_value_price) ?>/-</h5>
+                    <h6 class="text-muted">Total value</h6>
                 </div>
             </div>
         </div>

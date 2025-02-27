@@ -7,13 +7,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $category = $_POST['category'];
     $expense_date = $_POST['expense_date'];
 
-    // If category is 'vendor', get the vendor_id
+    // Determine vendor_id based on category
     if ($category == 'petty_cash') {
-        // Set vendor_id to 0 if category is petty_cash
-        $vendor_id = 0;
+        $vendor_id = 0; // Petty cash has no vendor
     } else {
-        // Otherwise, get the vendor_id from the POST data
-        $vendor_id = $_POST['vendor_id'];
+        $vendor_id = $_POST['vendor_id']; // Get vendor_id from form
     }
 
     // Validate required fields
@@ -22,26 +20,46 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
-    // Prepare SQL statement
-    $sql = "INSERT INTO tbl_expenses (amount, description, category, expense_date, vendor_id, created_at) 
-            VALUES (?, ?, ?, ?, ?, NOW())";
+    // Begin transaction
+    $conn->begin_transaction();
 
-    $stmt = $conn->prepare($sql);
-    $stmt->bind_param("dsssi", $amount, $description, $category, $expense_date, $vendor_id);
+    try {
+        // Insert into tbl_expenses
+        $sql = "INSERT INTO tbl_expenses (amount, description, category, expense_date, vendor_id, created_at) 
+                VALUES (?, ?, ?, ?, ?, NOW())";
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param("dsssi", $amount, $description, $category, $expense_date, $vendor_id);
+        $stmt->execute();
+        $expense_id = $stmt->insert_id; // Get the last inserted expense_id
+        $stmt->close();
 
-    if ($stmt->execute()) {
-        // Redirect to the expense page with a success message
+        // If vendor_id is not 0, insert into tbl_vendor_payments
+        if ($vendor_id != 0) {
+            $payment_method = $_POST['payment_method'] ?? 'Cash'; // Default to cash if not provided
+            $reference_number = $_POST['reference_number'] ?? null; // Optional reference number
+            $remarks = $_POST['remarks'] ?? null; // Optional remarks
+
+            $sql = "INSERT INTO tbl_vendor_payments (vendor_id, expense_id, amount, payment_date, payment_method, reference_number, remarks) 
+                    VALUES (?, ?, ?, ?, ?, ?, ?)";
+            $stmt = $conn->prepare($sql);
+            $stmt->bind_param("iidssss", $vendor_id, $expense_id, $amount, $expense_date, $payment_method, $reference_number, $remarks);
+            $stmt->execute();
+            $stmt->close();
+        }
+
+        // Commit transaction
+        $conn->commit();
+
+        // Redirect with success status
         header("Location: ../manage_expenses.php?status=success");
-        exit; // Ensure the script stops after redirection
-    } else {
-        // If the query fails, display an error message
-        echo json_encode(["statusCode" => 500, "message" => "Error: " . $stmt->error]);
+        exit;
+    } catch (Exception $e) {
+        // Rollback transaction if an error occurs
+        $conn->rollback();
+        echo json_encode(["statusCode" => 500, "message" => "Error: " . $e->getMessage()]);
     }
-
-    // Close the statement
-    $stmt->close();
 }
 
-// Close the database connection
+// Close database connection
 $conn->close();
 ?>
