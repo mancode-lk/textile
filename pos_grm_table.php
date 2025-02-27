@@ -15,6 +15,7 @@
       <th>Payment Type</th>
       <th>Total Bill</th>
       <th>View Details</th>
+      <th>Return/Exchange</th>
       <th>Delete</th>
     </tr>
   </thead>
