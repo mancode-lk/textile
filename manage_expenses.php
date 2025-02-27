@@ -132,23 +132,36 @@ $rs_expenses = $conn->query($sql_expenses);
                             </div>
 
                             <!-- Vendor Dropdown -->
-                            <div class="mb-3" id="vendorDropdown" style="display:none;">
-                                <label for="vendor_id" class="form-label">Select Vendor</label>
-                                <select name="vendor_id" id="vendor_id" class="form-control">
-                                    <?php
-                                    // Fetch all vendors
-                                    $sql_vendors = "SELECT * FROM tbl_vendors";
-                                    $result_vendors = $conn->query($sql_vendors);
-                                    if ($result_vendors->num_rows > 0) {
-                                        while ($vendor = $result_vendors->fetch_assoc()) {
-                                            echo "<option value='" . $vendor['vendor_id'] . "'>" . $vendor['vendor_name'] . "</option>";
-                                        }
-                                    } else {
-                                        echo "<option value=''>No Vendors Available</option>";
-                                    }
-                                    ?>
-                                </select>
-                            </div>
+                           <!-- Vendor Dropdown -->
+<div class="mb-3" id="vendorDropdown" style="display:none;">
+    <label for="vendor_id" class="form-label">Select Vendor</label>
+    <select name="vendor_id" id="vendor_id" class="form-control">
+        <?php
+        // Fetch all vendors
+        $sql_vendors = "SELECT * FROM tbl_vendors";
+        $result_vendors = $conn->query($sql_vendors);
+        if ($result_vendors->num_rows > 0) {
+            while ($vendor = $result_vendors->fetch_assoc()) {
+                echo "<option value='" . $vendor['vendor_id'] . "'>" . $vendor['vendor_name'] . "</option>";
+            }
+        } else {
+            echo "<option value=''>No Vendors Available</option>";
+        }
+        ?>
+    </select>
+</div>
+
+<!-- Payment Type Dropdown (Visible only when Vendor is selected) -->
+<div class="mb-3" id="paymentTypeDropdown" style="display:none;">
+    <label for="payment_type" class="form-label">Select Payment Type</label>
+    <select name="payment_type" id="payment_type" class="form-control">
+        <option value="">-- Select Payment Type --</option>
+        <option value="cash">Cash</option>
+        <option value="onlinePayment">Online Payment</option>
+        <option value="bankTransfer">Bank Transfer</option>
+    </select>
+</div>
+
 
                             <div class="mb-3">
                                 <label for="expense_date" class="form-label">Expense Date</label>
@@ -369,16 +382,18 @@ document.getElementById("clearFilter").addEventListener("click", function () {
     //     window.location.href = "expenses.php";
     // });
 
-    document.getElementById("category").addEventListener("change", function() {
-        var category = this.value;
-        var vendorDropdown = document.getElementById("vendorDropdown");
+    document.getElementById("category").addEventListener("change", function () {
+    var vendorDropdown = document.getElementById("vendorDropdown");
+    var paymentTypeDropdown = document.getElementById("paymentTypeDropdown");
 
-        if (category === "vendor") {
-            vendorDropdown.style.display = "block"; // Show vendor dropdown
-        } else {
-            vendorDropdown.style.display = "none"; // Hide vendor dropdown
-        }
-    });
+    if (this.value === "vendor") {
+        vendorDropdown.style.display = "block";
+        paymentTypeDropdown.style.display = "block"; // Show Payment Type dropdown
+    } else {
+        vendorDropdown.style.display = "none";
+        paymentTypeDropdown.style.display = "none"; // Hide Payment Type dropdown
+    }
+});
 
 
     function del_expense(id) {

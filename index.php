@@ -141,8 +141,7 @@ $total_payments_today = [
     'credit' => 0
 ];
 
-$sql_payment_today = "
-    SELECT g.payment_type, 
+$sql_payment_today = "SELECT g.payment_type, 
            SUM((p.price * o.quantity) - (g.discount_price * (p.price * o.quantity) / sub.total_purchase)) AS total_received
     FROM tbl_order o
     JOIN tbl_order_grm g ON g.id = o.grm_ref
@@ -167,7 +166,24 @@ while ($row = $rs_payment_today->fetch_assoc()) {
     }
 }
 
-$till_balance = $total_payments_today['cash'] - $tot_expenses_today;
+// Fetch total expenses without a vendor
+$sql_no_vendor_expenses = "SELECT SUM(amount) AS total FROM tbl_expenses WHERE DATE(expense_date) = '$today_date'";
+$rs_no_vendor_expenses = $conn->query($sql_no_vendor_expenses);
+$row_no_vendor_expenses = $rs_no_vendor_expenses->fetch_assoc();
+$tot_no_vendor_expenses = $row_no_vendor_expenses['total'] ?? 0;
+
+// Fetch total expenses with a vendor where payment method is 'Cash'
+$sql_vendor_cash_expenses = "SELECT SUM(amount) AS total FROM tbl_vendor_payments 
+                             WHERE DATE(payment_date) = '$today_date' 
+                             AND payment_method = 'Cash'";
+$rs_vendor_cash_expenses = $conn->query($sql_vendor_cash_expenses);
+$row_vendor_cash_expenses = $rs_vendor_cash_expenses->fetch_assoc();
+$tot_vendor_cash_expenses = $row_vendor_cash_expenses['total'] ?? 0;
+
+// Calculate total expenses for today
+$tot_expenses_today_cash = $tot_no_vendor_expenses + $tot_vendor_cash_expenses;
+
+$till_balance = $total_payments_today['cash'] - $tot_expenses_today_cash;
 
 ?>
 

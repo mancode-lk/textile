@@ -6,12 +6,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $description = $_POST['description'];
     $category = $_POST['category'];
     $expense_date = $_POST['expense_date'];
-
+    
     // Determine vendor_id based on category
     if ($category == 'petty_cash') {
         $vendor_id = 0; // Petty cash has no vendor
     } else {
         $vendor_id = $_POST['vendor_id']; // Get vendor_id from form
+        $payment_type=$_POST['payment_type'];
     }
 
     // Validate required fields
