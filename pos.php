@@ -8,8 +8,10 @@
 
       $grm_id = $conn->insert_id;
       $_SESSION['grm_ref'] = $grm_id;
+      $discount_price = getDataBack($conn,'tbl_order_grm','id',$grm_id,'discount_price');
   } else {
       $grm_id = $_SESSION['grm_ref'];
+      $discount_price = getDataBack($conn,'tbl_order_grm','id',$grm_id,'discount_price');
   }
 ?>
 <!DOCTYPE html>
@@ -100,7 +102,7 @@
               <div class="col-6">
                 <div class="input-group">
                   <span class="input-group-text"><i class="fas fa-percentage"></i></span>
-                  <input type="text" id="discount_amount" onkeyup="discountBill(this.value)" class="form-control" placeholder="Bill Disc (LKR200)" />
+                  <input type="text" id="discount_amount" onkeyup="discountBill(this.value)" class="form-control" value="<?php if($discount_price != 0){ echo $discount_price; } ?>" placeholder="Bill Disc (LKR200)" />
                 </div>
               </div>
               <!-- Total -->
@@ -271,6 +273,7 @@
 </body>
 </html>
 <script type="text/javascript">
+
 $(document).ready(function() {
     $("#customerSelect").select2({
         placeholder: "Select a customer",
@@ -653,6 +656,7 @@ $(document).ready(function() {
     $('#totalValue').load('ajax/bill_total.php', function(response, status, xhr) {
         $('#totPrice').val(response);
     });
+
 });
 </script>
 
@@ -689,4 +693,11 @@ discountTimeout = setTimeout(() => {
 }, 500); // Timeout set to 500ms (adjust if needed)
 }
 
+    </script>
+    <script>
+      window.onload = function() {
+        <?php if($discount_price != 0) { ?>
+          discountBill(<?= $discount_price ?>);
+        <?php } ?>
+      };
     </script>
