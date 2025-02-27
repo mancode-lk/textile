@@ -1,5 +1,4 @@
 <?php
-
 include 'backend/conn.php';
 ?>
 <!DOCTYPE html>
@@ -8,11 +7,18 @@ include 'backend/conn.php';
   <meta charset="UTF-8">
   <title>Customer Report</title>
   <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet" />
+
 </head>
 <body>
   <div class="container mt-5">
     <h2 class="mb-4">Customer Report</h2>
+
+    <!-- Customer Payments Button -->
+    <button class="btn btn-success mb-3" data-toggle="modal" data-target="#paymentModal">
+      Customer Payments
+    </button>
+
     <table class="table table-bordered table-striped">
       <thead class="thead-dark">
         <tr>
@@ -85,50 +91,73 @@ include 'backend/conn.php';
     </table>
   </div>
 
-  <!-- MODAL -->
-  <div class="modal fade" id="orderModal" tabindex="-1" aria-labelledby="orderModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
+  <!-- CUSTOMER PAYMENT MODAL -->
+  <div class="modal fade" id="paymentModal" tabindex="-1" aria-labelledby="paymentModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title" id="orderModalLabel">Customer Orders</h5>
+          <h5 class="modal-title">Customer Payment</h5>
           <button type="button" class="close" data-dismiss="modal" aria-label="Close">
             <span aria-hidden="true">&times;</span>
           </button>
         </div>
         <div class="modal-body">
-          <h5>Customer: <span id="customerName"></span></h5>
-          <div id="orderDetails">
-            <p class="text-center text-muted">Loading orders...</p>
-          </div>
+          <form id="paymentForm">
+            <div class="form-group">
+              <label>Select Customer</label>
+              <select class="form-control select2" name="customer_id" id="customerSelect" required>
+                <option value="">Select Customer</option>
+                <?php
+                $sql_customers = "SELECT c_id, c_name FROM tbl_customer";
+                $result_customers = mysqli_query($conn, $sql_customers);
+                while($customer = mysqli_fetch_assoc($result_customers)){
+                  echo "<option value='".$customer['c_id']."'>".$customer['c_name']."</option>";
+                }
+                ?>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Description</label>
+              <input type="text" class="form-control" name="cp_description" required>
+            </div>
+            <div class="form-group">
+              <label>Amount Received (LKR)</label>
+              <input type="number" class="form-control" name="cp_amount" step="0.01" required>
+            </div>
+            <button type="submit" class="btn btn-success">Submit Payment</button>
+          </form>
+          <div id="paymentMessage" class="mt-2"></div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- AJAX -->
+  <!-- AJAX for Customer Payment -->
   <script>
     $(document).ready(function(){
-      $(".view-orders").click(function(){
-        var customerId = $(this).data("id");
-        var customerName = $(this).data("name");
-        $("#customerName").text(customerName);
-        $("#orderDetails").html("<p class='text-center text-muted'>Loading orders...</p>");
+      $(".select2").select2();
 
+      $("#paymentForm").submit(function(e){
+        e.preventDefault();
         $.ajax({
-          url: "ajax/fetch.php",
+          url: "backend/save_payment.php",
           type: "POST",
-          data: { customer_id: customerId },
+          data: $(this).serialize(),
           success: function(response){
-            $("#orderDetails").html(response);
+            $("#paymentMessage").html(response);
+            $("#paymentForm")[0].reset();
+            $(".select2").val(null).trigger("change"); // Reset Select2
           }
         });
-
-        $("#orderModal").modal("show");
       });
     });
   </script>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
   <!-- Bootstrap JS -->
   <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
+  <!-- Select2 CSS -->
+<link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet" />
+
 </body>
 </html>
