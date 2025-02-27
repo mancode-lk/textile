@@ -2,7 +2,7 @@
 include '../backend/conn.php';
 $grm_id = $_SESSION['grm_ref'];
 
-$sql = "SELECT * FROM `tbl_order` WHERE grm_ref='$grm_id' ORDER BY id DESC";
+$sql = "SELECT * FROM tbl_order WHERE grm_ref='$grm_id' ORDER BY id DESC";
 $rs = $conn->query($sql);
 
 if ($rs->num_rows > 0) {
@@ -17,6 +17,7 @@ if ($rs->num_rows > 0) {
                 $p_name = getDataBack($conn, 'tbl_product', 'id', $p_id, 'name');
                 $p_price = getDataBack($conn, 'tbl_product', 'id', $p_id, 'price');
                 $qty = $row['quantity'];
+                $discount = $row['discount'] ?? 0; // Fetch stored discount, default to 0
                 $currentStock = currentStockCount($conn, $p_id);
 
                 // Stock Level Indicators
@@ -27,6 +28,9 @@ if ($rs->num_rows > 0) {
                 if ($currentStock == 0) {
                     $stockBadge = '<span class="badge bg-danger">Out of Stock</span>';
                 }
+
+                // Calculate total price after discount
+                $totalPrice = ($p_price * $qty) - $discount;
                 ?>
                 <div class="list-group-item d-flex justify-content-between align-items-center">
                     <div>
@@ -35,12 +39,19 @@ if ($rs->num_rows > 0) {
                         <div>Stock: <span class="fw-bold"><?= $currentStock ?></span> <?= $stockBadge ?></div>
                     </div>
                     <div class="d-flex align-items-center">
-                      <input type="number" value="<?= (int) $qty ?>" min="1"
-     oninput="updateQnty(<?= $id ?>, this.value)"
-     class="form-control form-control-sm me-2 quantity-input"
-     style="width: 80px;" />
+                        <input type="number" value="<?= (int) $qty ?>" min="1"
+                               oninput="updateQnty(<?= $id ?>, this.value)"
+                               class="form-control form-control-sm me-2 quantity-input"
+                               style="width: 80px;" />
 
-                        <span class="fw-bold me-2">LKR <?= number_format($p_price * $qty, 2) ?></span>
+                        <input type="number" value="<?= (int) $discount ?>" min="0"
+                               oninput="applyDiscount(<?= $id ?>, this.value)"
+                               class="form-control form-control-sm me-2 discount-input"
+                               placeholder="Discount"
+                               style="width: 90px;" /> 
+
+                        <span class="fw-bold me-2">LKR <span id="total_price_<?= $id ?>"><?= number_format($totalPrice, 2) ?></span></span>
+
                         <button class="btn btn-sm btn-danger" onclick="del_item_cart(<?= $id ?>)">
                             <i class="fas fa-trash-alt"></i>
                         </button>
@@ -49,6 +60,7 @@ if ($rs->num_rows > 0) {
             <?php } ?>
         </div>
     </div>
+
     <?php
 }
 ?>

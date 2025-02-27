@@ -12,7 +12,7 @@ session_start();
 $servername = "localhost";
 $username = "root";
 $password = "";
-$dbname = "db_textile3";
+$dbname = "db_textile";
 
 $conn = new mysqli($servername,$username,$password,$dbname);
 
