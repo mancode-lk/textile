@@ -141,22 +141,27 @@ $total_payments_today = [
     'credit' => 0
 ];
 
-$sql_payment_today = "SELECT g.payment_type, 
-           SUM((p.price * o.quantity) - (g.discount_price * (p.price * o.quantity) / sub.total_purchase)) AS total_received
+$sql_payment_today = "
+    SELECT 
+        g.payment_type, 
+        SUM((p.price * o.quantity) - (g.discount_price * (p.price * o.quantity) / sub.total_purchase)) AS total_received
     FROM tbl_order o
     JOIN tbl_order_grm g ON g.id = o.grm_ref
     JOIN tbl_product p ON o.product_id = p.id
     JOIN (
+        -- Get the total purchase amount per bill before applying discount
         SELECT o.grm_ref, SUM(p.price * o.quantity) AS total_purchase
         FROM tbl_order o
         JOIN tbl_product p ON o.product_id = p.id
         GROUP BY o.grm_ref
     ) sub ON sub.grm_ref = g.id
     WHERE DATE(g.order_date) = CURDATE()
-    GROUP BY g.payment_type";
-
+    GROUP BY g.payment_type
+";
 
 $rs_payment_today = $conn->query($sql_payment_today);
+$total_payments_today = ['cash' => 0, 'online' => 0, 'bank' => 0, 'credit' => 0];
+
 while ($row = $rs_payment_today->fetch_assoc()) {
     switch ($row['payment_type']) {
         case 0: $total_payments_today['cash'] = $row['total_received']; break;
@@ -166,8 +171,9 @@ while ($row = $rs_payment_today->fetch_assoc()) {
     }
 }
 
+
 // Fetch total expenses without a vendor
-$sql_no_vendor_expenses = "SELECT SUM(amount) AS total FROM tbl_expenses WHERE DATE(expense_date) = '$today_date'";
+$sql_no_vendor_expenses = "SELECT SUM(amount) AS total FROM tbl_expenses WHERE DATE(expense_date) = '$today_date' AND category='petty_cash'";
 $rs_no_vendor_expenses = $conn->query($sql_no_vendor_expenses);
 $row_no_vendor_expenses = $rs_no_vendor_expenses->fetch_assoc();
 $tot_no_vendor_expenses = $row_no_vendor_expenses['total'] ?? 0;
@@ -186,182 +192,258 @@ $tot_expenses_today_cash = $tot_no_vendor_expenses + $tot_vendor_cash_expenses;
 $till_balance = $total_payments_today['cash'] - $tot_expenses_today_cash;
 
 ?>
+<style>
+    .dashboard-card {
+        transition: transform 0.3s ease;
+        border: none;
+        border-radius: 15px;
+    }
+    .dashboard-card:hover {
+        transform: translateY(-5px);
+    }
+    .card-icon {
+        width: 50px;
+        height: 50px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 12px;
+        font-size: 24px;
+    }
+    .metric-title {
+        font-size: 0.9rem;
+        color: #6c757d;
+    }
+    .metric-value {
+        font-size: 1.5rem;
+        font-weight: 600;
+    }
+    .section-title {
+        font-weight: 600;
+        color: #2c3e50;
+        border-left: 4px solid #007bff;
+        padding-left: 1rem;
+        margin: 1.5rem 0;
+    }
+</style>
 
 <div class="page-wrapper">
-    <div class="content">
-        <div class="row">
-            <!-- Total Stock Value -->
-            <?php
-if($u_id==1){
-?>
+    <div class="content container-fluid">
+        <!-- Dashboard Metrics Grid -->
+        <div class="row g-4">
+            <?php if($u_id == 1): ?>
+            <!-- Financial Overview Section -->
+            <div class="col-12">
+                <h4 class="section-title">Financial Overview</h4>
+                <div class="row g-4">
+                    <div class="col-xl-3 col-lg-4 col-md-6">
+                        <div class="card dashboard-card shadow-sm">
+                            <div class="card-body">
+                                <div class="d-flex align-items-center">
+                                    <div class="card-icon bg-primary text-white me-3">
+                                        <i class="ri-archive-line"></i>
+                                    </div>
+                                    <div>
+                                        <div class="metric-title">Total Stock Value</div>
+                                        <div class="metric-value text-primary">
+                                            Rs.<?= number_format($stock_value) ?>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
-<div class="container mt-4">
-    <div class="row">
+                    <div class="col-xl-3 col-lg-4 col-md-6">
+                        <div class="card dashboard-card shadow-sm">
+                            <div class="card-body">
+                                <div class="d-flex align-items-center">
+                                    <div class="card-icon bg-success text-white me-3">
+                                        <i class="ri-money-dollar-circle-line"></i>
+                                    </div>
+                                    <div>
+                                        <div class="metric-title">Total Cost</div>
+                                        <div class="metric-value text-success">
+                                            Rs.<?= number_format($total_cost_price) ?>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
-        <!-- Total Stock Value -->
-        <div class="col-lg-3 col-md-4 col-sm-6 col-12 mb-3">
-            <div class="card shadow-sm">
-                <div class="card-body text-center py-3">
-                    <i class="ri-archive-line mb-2" style="font-size: 30px;"></i>
-                    <h5>Rs.<?= number_format($stock_value) ?>/-</h5>
-                    <h6 class="text-muted">Total Stock Value</h6>
+                    <div class="col-xl-3 col-lg-4 col-md-6">
+                        <div class="card dashboard-card shadow-sm">
+                            <div class="card-body">
+                                <div class="d-flex align-items-center">
+                                    <div class="card-icon bg-info text-white me-3">
+                                        <i class="ri-line-chart-line"></i>
+                                    </div>
+                                    <div>
+                                        <div class="metric-title">Total Sales Value</div>
+                                        <div class="metric-value text-info">
+                                            Rs.<?= number_format($tot_bill_dis) ?>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Payments Overview Section -->
+            <div class="col-12">
+                <h4 class="section-title">Payments Overview</h4>
+                <div class="row g-4">
+                    <div class="col-xl-3 col-lg-4 col-md-6">
+                        <div class="card dashboard-card shadow-sm">
+                            <div class="card-header bg-dark text-white">
+                                <h6 class="mb-0">Cash Flow</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="metric-title">Received via Cash</div>
+                                <div class="metric-value">Rs.<?= number_format($total_payments_today['cash']) ?></div>
+                                <div class="metric-title mt-2">Till Balance</div>
+                                <div class="metric-value text-success">
+                                    Rs.<?= number_format($till_balance) ?>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-xl-3 col-lg-4 col-md-6">
+                        <div class="card dashboard-card shadow-sm">
+                            <div class="card-body">
+                                <div class="d-flex align-items-center">
+                                    <div class="card-icon bg-warning text-white me-3">
+                                        <i class="ri-global-line"></i>
+                                    </div>
+                                    <div>
+                                        <div class="metric-title">Online Payments</div>
+                                        <div class="metric-value text-warning">
+                                            Rs.<?= number_format($total_payments_today['online']) ?>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-xl-3 col-lg-4 col-md-6">
+                        <div class="card dashboard-card shadow-sm">
+                            <div class="card-body">
+                                <div class="d-flex align-items-center">
+                                    <div class="card-icon bg-danger text-white me-3">
+                                        <i class="ri-bank-line"></i>
+                                    </div>
+                                    <div>
+                                        <div class="metric-title">Bank Transfers</div>
+                                        <div class="metric-value text-danger">
+                                            Rs.<?= number_format($total_payments_today['bank']) ?>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <?php endif; ?>
+
+            <!-- Daily Summary Section -->
+            <div class="col-12">
+                <h4 class="section-title">Daily Summary</h4>
+                <div class="row g-4">
+                    <div class="col-xl-3 col-lg-4 col-md-6">
+                        <div class="card dashboard-card shadow-sm">
+                            <div class="card-body">
+                                <div class="d-flex align-items-center">
+                                    <div class="card-icon bg-primary text-white me-3">
+                                        <i class="ri-shopping-bag-line"></i>
+                                    </div>
+                                    <div>
+                                        <div class="metric-title">Today's Sales</div>
+                                        <div class="metric-value text-primary">
+                                            Rs.<?= number_format($tot_bill_dis_today) ?>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-xl-3 col-lg-4 col-md-6">
+                        <div class="card dashboard-card shadow-sm">
+                            <div class="card-body">
+                                <div class="d-flex align-items-center">
+                                    <div class="card-icon bg-success text-white me-3">
+                                        <i class="ri-money-dollar-circle-line"></i>
+                                    </div>
+                                    <div>
+                                        <div class="metric-title">Today's Expenses</div>
+                                        <div class="metric-value text-success">
+                                            Rs.<?= number_format($tot_expenses_today) ?>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- Total Cost -->
-        <div class="col-lg-3 col-md-4 col-sm-6 col-12 mb-3">
-            <div class="card shadow-sm">
-                <div class="card-body text-center py-3">
-                    <i class="ri-money-dollar-circle-line mb-2" style="font-size: 30px;"></i>
-                    <h5>Rs.<?= number_format($total_cost_price) ?>/-</h5>
-                    <h6 class="text-muted">Total Cost</h6>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-lg-3 col-md-4 col-sm-6 col-12 mb-3">
-            <div class="card shadow-sm">
-                <div class="card-body text-center py-3">
-                    <i class="ri-money-dollar-circle-line mb-2" style="font-size: 30px;"></i>
-                    <h5>Rs.<?= number_format($total_value_price) ?>/-</h5>
-                    <h6 class="text-muted">Total value</h6>
-                </div>
-            </div>
-        </div>
-
-        <!-- Total Sales Value -->
-        <div class="col-lg-3 col-md-4 col-sm-6 col-12 mb-3">
-            <div class="card shadow-sm">
-                <div class="card-body text-center py-3">
-                    <i class="ri-bar-chart-line mb-2" style="font-size: 30px;"></i>
-                    <h5>Rs.<?= number_format($tot_bill_dis) ?>/-</h5>
-                    <h6 class="text-muted">Total Sales Value</h6>
-                </div>
-            </div>
-        </div>
-
-        <!-- Cash Payments -->
-        <div class="col-lg-3 col-md-4 col-sm-6 col-12 mb-3">
-            <div class="card shadow-sm">
-                <div class="card-body text-center py-3">
-                    <i class="ri-wallet-line mb-2" style="font-size: 30px;"></i>
-                    <h5>Rs.<?= number_format($total_payments_today['cash']) ?>/-</h5>
-                    <h6 class="text-muted">Received via Cash</h6>
-                </div>
-            </div>
-        </div>
-
-        <!-- Online Payments -->
-        <div class="col-lg-3 col-md-4 col-sm-6 col-12 mb-3">
-            <div class="card shadow-sm">
-                <div class="card-body text-center py-3">
-                    <i class="ri-global-line mb-2" style="font-size: 30px;"></i>
-                    <h5>Rs.<?= number_format($total_payments_today['online']) ?>/-</h5>
-                    <h6 class="text-muted">Received via Online Payment</h6>
-                </div>
-            </div>
-        </div>
-
-        <!-- Bank Transfer Payments -->
-        <div class="col-lg-3 col-md-4 col-sm-6 col-12 mb-3">
-            <div class="card shadow-sm">
-                <div class="card-body text-center py-3">
-                    <i class="ri-bank-line mb-2" style="font-size: 30px;"></i>
-                    <h5>Rs.<?= number_format($total_payments_today['bank']) ?>/-</h5>
-                    <h6 class="text-muted">Received via Bank Transfer</h6>
-                </div>
-            </div>
-        </div>
-
-        <!-- Credit Given -->
-        <div class="col-lg-3 col-md-4 col-sm-6 col-12 mb-3">
-            <div class="card shadow-sm">
-                <div class="card-body text-center py-3">
-                    <i class="ri-bank-card-2-line mb-2" style="font-size: 30px;"></i>
-                    <h5>Rs.<?= number_format($total_payments_today['credit']) ?>/-</h5>
-                    <h6 class="text-muted">Given on Credit</h6>
-                </div>
-            </div>
-        </div>
-
-        <!-- Till Balance -->
-        <div class="col-lg-3 col-md-4 col-sm-6 col-12 mb-3">
-            <div class="card shadow-sm">
-                <div class="card-body text-center py-3">
-                    <i class="ri-wallet-3-line mb-2" style="font-size: 30px;"></i>
-                    <h5>Rs.<?= number_format($till_balance) ?>/-</h5>
-                    <h6 class="text-muted">Till Balance</h6>
-                </div>
-            </div>
-        </div>
-
-    </div>
-    <?php
-}
-?>
-    <!-- Today's Sales -->
-    <div class="row">
-        <div class="col-lg-3 col-md-4 col-sm-6 col-12 mb-3">
-            <div class="card shadow-sm">
-                <div class="card-body text-center py-3">
-                    <i class="ri-calendar-line mb-2" style="font-size: 30px;"></i>
-                    <h5>Rs.<?= number_format($tot_bill_dis_today) ?>/-</h5>
-                    <h6 class="text-muted">Today's Sales</h6>
-                </div>
-            </div>
-        </div>
-
-        <!-- Today's Expenses -->
-        <div class="col-lg-3 col-md-4 col-sm-6 col-12 mb-3">
-            <div class="card shadow-sm">
-                <div class="card-body text-center py-3">
-                    <i class="ri-price-tag-line mb-2" style="font-size: 30px;"></i>
-                    <h5>Rs.<?= number_format($tot_expenses_today) ?>/-</h5>
-                    <h6 class="text-muted">Today's Expenses</h6>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-
-
-        <!-- Action Buttons -->
-        <div class="row mt-3">
-            <div class="col-lg-12 text-center">
-                <a href="productlist.php" class="btn btn-primary mx-2">View Product</a>
-                <a href="vendorlist.php" class="btn btn-secondary mx-2">View Vendor</a>
-                <!-- <a href="customer_management.php" class="btn btn-success mx-2">Customer Management</a> -->
-                <a href="manage_expenses.php" class="btn btn-warning mx-2">Expenses</a>
-            </div>
-        </div>
-
-        <!-- Recently Added Products -->
+        <!-- Quick Actions -->
         <div class="row mt-4">
-            <div class="col-lg-12">
-                <div class="card">
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                        <h4 class="card-title mb-0">Recently Added Products</h4>
+            <div class="col-12">
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-center gap-3">
+                            <a href="productlist.php" class="btn btn-primary btn-lg px-4">
+                                <i class="ri-list-check me-2"></i>View Products
+                            </a>
+                            <a href="vendorlist.php" class="btn btn-secondary btn-lg px-4">
+                                <i class="ri-store-line me-2"></i>View Vendors
+                            </a>
+                            <a href="manage_expenses.php" class="btn btn-warning btn-lg px-4">
+                                <i class="ri-money-dollar-circle-line me-2"></i>Manage Expenses
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Products Table -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-dark text-white">
+                        <h5 class="card-title mb-0">Recently Added Products</h5>
                     </div>
                     <div class="card-body">
                         <div class="table-responsive">
-                            <table class="table datatable" id="productTable">
-                                <thead>
+                            <table class="table table-hover table-borderless">
+                                <thead class="bg-light">
                                     <tr>
                                         <th>Product Name</th>
-                                        <th>Price</th>
+                                        <th class="text-end">Price (Rs)</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <?php
-                                    if ($rs->num_rows > 0) {
-                                        while ($row = $rs->fetch_assoc()) { ?>
+                                    <?php if ($rs->num_rows > 0): ?>
+                                        <?php while ($row = $rs->fetch_assoc()): ?>
                                             <tr>
-                                                <td><?= !empty($row['product_name']) ? $row['product_name'] : 'No Category' ?></td>
-                                                <td><?= $row['price'] !== null ? number_format($row['price'], 2) : 'N/A' ?></td>
+                                                <td><?= htmlspecialchars($row['product_name']) ?></td>
+                                                <td class="text-end"><?= number_format($row['price'], 2) ?></td>
                                             </tr>
-                                    <?php }} ?>
+                                        <?php endwhile; ?>
+                                    <?php else: ?>
+                                        <tr>
+                                            <td colspan="2" class="text-center text-muted">No products found</td>
+                                        </tr>
+                                    <?php endif; ?>
                                 </tbody>
                             </table>
                         </div>
@@ -369,7 +451,7 @@ if($u_id==1){
                 </div>
             </div>
         </div>
-    </div>  
+    </div>
 </div>
 
 <?php include 'layouts/footer.php'; ?>

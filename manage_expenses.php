@@ -158,7 +158,6 @@ $rs_expenses = $conn->query($sql_expenses);
         <option value="">-- Select Payment Type --</option>
         <option value="cash">Cash</option>
         <option value="onlinePayment">Online Payment</option>
-        <option value="bankTransfer">Bank Transfer</option>
     </select>
 </div>
 
@@ -383,15 +382,21 @@ document.getElementById("clearFilter").addEventListener("click", function () {
     // });
 
     document.getElementById("category").addEventListener("change", function () {
-    var vendorDropdown = document.getElementById("vendorDropdown");
-    var paymentTypeDropdown = document.getElementById("paymentTypeDropdown");
-
+    const vendorDropdown = document.getElementById("vendorDropdown");
+    const paymentTypeDropdown = document.getElementById("paymentTypeDropdown");
+    
     if (this.value === "vendor") {
         vendorDropdown.style.display = "block";
-        paymentTypeDropdown.style.display = "block"; // Show Payment Type dropdown
+        paymentTypeDropdown.style.display = "block";
+        // Add required attributes
+        document.querySelector("[name='vendor_id']").required = true;
+        document.querySelector("[name='payment_type']").required = true;
     } else {
         vendorDropdown.style.display = "none";
-        paymentTypeDropdown.style.display = "none"; // Hide Payment Type dropdown
+        paymentTypeDropdown.style.display = "none";
+        // Remove required attributes
+        document.querySelector("[name='vendor_id']").required = false;
+        document.querySelector("[name='payment_type']").required = false;
     }
 });
 

@@ -6,6 +6,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $description = $_POST['description'];
     $category = $_POST['category'];
     $expense_date = $_POST['expense_date'];
+
+    // $vendor_id = (int)$_POST['vendor_id'];
+    // $payment_type = $_POST['payment_type']; 
     
     // Determine vendor_id based on category
     if ($category == 'petty_cash') {
@@ -36,7 +39,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         // If vendor_id is not 0, insert into tbl_vendor_payments
         if ($vendor_id != 0) {
-            $payment_method = $_POST['payment_method'] ?? 'Cash'; // Default to cash if not provided
+            $payment_method = $_POST['payment_method'] ?? 'OnlinePay'; // Default to cash if not provided
             $reference_number = $_POST['reference_number'] ?? null; // Optional reference number
             $remarks = $_POST['remarks'] ?? null; // Optional remarks
 
