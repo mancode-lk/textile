@@ -66,9 +66,6 @@ if ($rs->num_rows > 0) {
                 </a>
             </td>
             <td>
-              <a href="#" class="btn btn-warning btn-sm">Return/Exchange</a>
-            </td>
-            <td>
                 <a onclick="del_order(<?= $ref ?>)" class="me-3 confirm-text" href="javascript:void(0);">
                     <img src="assets/img/icons/delete.svg" alt="Delete">
                 </a>

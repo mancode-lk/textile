@@ -43,29 +43,36 @@ function generateOrderRef($conn) {
 }
 
 
-function currentStockCount($conn,$p_id){
+function currentStockCount($conn, $p_id) {
 
-  $sqlMinStock = "SELECT SUM(quantity) AS qnty FROM tbl_order WHERE product_id='$p_id'";
-  $rsMinStock = $conn->query($sqlMinStock);
+    $sqlOrder = "SELECT SUM(quantity) AS orderQty
+                 FROM tbl_order
+                 WHERE product_id = '$p_id'
+                   AND id NOT IN (SELECT or_id FROM tbl_return_exchange)";
+    $rsOrder = $conn->query($sqlOrder);
+    $orderQty = 0;
+    if($rsOrder && $rsOrder->num_rows > 0){
+        $rowOrder = $rsOrder->fetch_assoc();
+        $orderQty = $rowOrder['orderQty'] ? $rowOrder['orderQty'] : 0;
+    }
 
-  if($rsMinStock->num_rows > 0){
-    $rowMinStock = $rsMinStock->fetch_assoc();
-    $redStoc = $rowMinStock['qnty'];
-  }
 
-  $sqlSub = "SELECT SUM(quantity) AS quantity FROM tbl_expiry_date WHERE product_id='$p_id'";
-  $rsSub = $conn->query($sqlSub);
-  if($rsSub->num_rows >0){
-    $rowSub = $rsSub->fetch_assoc();
+    $sqlExpiry = "SELECT SUM(quantity) AS expiryQty
+                  FROM tbl_expiry_date
+                  WHERE product_id = '$p_id'";
+    $rsExpiry = $conn->query($sqlExpiry);
+    $expiryQty = 0;
+    if($rsExpiry && $rsExpiry->num_rows > 0){
+        $rowExpiry = $rsExpiry->fetch_assoc();
+        $expiryQty = $rowExpiry['expiryQty'] ? $rowExpiry['expiryQty'] : 0;
+    }
 
-    $quantity = $rowSub['quantity'] - $redStoc;
- }
- else {
-    $quantity = 0;
- }
 
- return $quantity;
+    $currentStock = $expiryQty - $orderQty;
+
+    return $currentStock;
 }
+
 
 
 function currentStockCountByLocation($conn,$p_id,$s_point_id){

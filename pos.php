@@ -695,6 +695,61 @@ discountTimeout = setTimeout(() => {
 
     </script>
     <script>
+    function cashReturn(orderId) {
+        if (confirm("Are you sure you want to process a cash return for this item?")) {
+          $.ajax({
+              url: 'backend/cashReturn.php',
+              method: 'POST',
+              data: { order_id: orderId,st:0 },
+              success: function(resp) {
+                  if (resp == 200) {
+                      let paid_amount = parseFloat(document.getElementById('paid_amount').value) || 0;
+                      if (paid_amount !== 0) {
+                          showBalance();
+                      }
+                      let discountValue = document.getElementById('discount_amount').value;
+                      if (discountValue !== "") {
+                          discountBill(discountValue);
+                      } else {
+                          calculateTotal();
+                      }
+                      $('#showCartItems').load('ajax/cart_items.php');
+                  } else {
+                      console.error('Update failed:', resp);
+                  }
+              }
+          });
+        }
+    }
+
+    function exchangeItem(orderId) {
+        if (confirm("Are you sure you want to exchange this item?")) {
+          $.ajax({
+              url: 'backend/cashReturn.php',
+              method: 'POST',
+              data: { order_id: orderId,st:1 },
+              success: function(resp) {
+                  if (resp == 200) {
+                      let paid_amount = parseFloat(document.getElementById('paid_amount').value) || 0;
+                      if (paid_amount !== 0) {
+                          showBalance();
+                      }
+                      let discountValue = document.getElementById('discount_amount').value;
+                      if (discountValue !== "") {
+                          discountBill(discountValue);
+                      } else {
+                          calculateTotal();
+                      }
+                      $('#showCartItems').load('ajax/cart_items.php');
+                  } else {
+                      console.error('Update failed:', resp);
+                  }
+              }
+          });
+        }
+    }
+    </script>
+    <script>
       window.onload = function() {
         <?php if($discount_price != 0) { ?>
           discountBill(<?= $discount_price ?>);
