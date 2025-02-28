@@ -76,7 +76,7 @@
       <div class="col-md-6">
         <div class="card h-100">
           <div class="card-header bg-primary text-white">
-            <h4 class="mb-0"><i class="fas fa-shopping-cart me-2"></i>Cart Summary & Bill</h4>
+            <h4 class="mb-0"><i class="fas fa-shopping-cart me-2"></i>Cart Summary & Bill <input type="hidden" id="addedValueTxt" name="" value=""> </h4>
           </div>
           <div class="card-body">
             <!-- Cart Items List (Scrollable) -->
@@ -507,10 +507,10 @@ function discountBill(price){
 
 // Function to update balance display based on paid amount and total price
 function showBalance() {
-    let totPrice = parseFloat(document.getElementById('totPrice').value) || 0;
+    let totPrice = parseFloat(document.getElementById('addedValueTxt').value) || 0;
     let paid_amount = parseFloat(document.getElementById('paid_amount').value) || 0;
     let balance = paid_amount - totPrice;
-    document.getElementById('balanceToGive').innerHTML = balance.toFixed(2);
+    document.getElementById('balanceToGive').innerHTML = balance;
 }
 
 // Function to add an item to the cart using a barcode

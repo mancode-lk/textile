@@ -53,4 +53,7 @@ if (isset($_REQUEST['disc_price'])) {
 <?php } ?>
 <script type="text/javascript">
   document.getElementById('totPrice').value=<?= $total_price ?>;
+  document.getElementById('addedValueTxt').value=<?= $total_price ?>;
+
+
 </script>
