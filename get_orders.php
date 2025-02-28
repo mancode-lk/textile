@@ -47,11 +47,17 @@ if ($rs->num_rows > 0) {
             $rsS = $conn->query($sqlS);
             if($rsS->num_rows > 0){
               while($rowS=$rsS->fetch_assoc()){
+                $id= $rowS['id'];
               $pid = $rowS['product_id'];
               $qty = $rowS['quantity'];
 
               $priceP = getDataBack($conn,'tbl_product','id',$pid,'price');
-              $total +=$priceP * $qty;
+              $sqlReturn ="SELECT * FROM tbl_return_exchange WHERE or_id='$id'";
+              $rsReturn = $conn->query($sqlReturn);
+              if($rsReturn->num_rows == 0){
+                $total +=$priceP * $qty;
+              }
+
             }
             }
             ?>
