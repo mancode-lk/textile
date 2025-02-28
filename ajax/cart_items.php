@@ -69,14 +69,14 @@ if ($rs->num_rows > 0) {
                         <span class="fw-bold me-2">LKR <span id="total_price_<?= $id ?>"><?= number_format($totalPrice, 2) ?></span></span>
 
                         <!-- Cash Return Button -->
-                        <?php if($exchange_st !=0){ ?>
+                        <?php if($exchange_st ==-1){ ?>
                         <button class="btn btn-sm btn-warning me-2" id="cashReturnButton" style="font-size:10px;" onclick="cashReturn(<?= $id ?>)">
                             <i class="fas fa-money-bill-wave"></i> Cash Return
                         </button>
                       <?php } ?>
 
                         <!-- Exchange Button -->
-                        <?php if($exchange_st !=1){ ?>
+                        <?php if($exchange_st ==-1){ ?>
                         <button class="btn btn-sm btn-primary me-2" id="exhchangeButton" style="font-size:10px;" onclick="exchangeItem(<?= $id ?>)">
                             <i class="fas fa-exchange-alt"></i> Exchange
                         </button>

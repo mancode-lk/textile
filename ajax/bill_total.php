@@ -8,13 +8,20 @@
     if($rs->num_rows > 0){
       while($row = $rs->fetch_assoc()){
         $id = $row['id'];
-        $p_id=$row['product_id'];
-        $qty =$row['quantity'];
-        $p_name = getDataBack($conn,'tbl_product','id',$p_id,'name');
-        $p_price =getDataBack($conn,'tbl_product','id',$p_id,'price') * $qty;
-        $discount = $row['discount'] ?? 0; // Fetch stored discount, default to 0
-        $p_price = $p_price - $discount;
-        $total_price +=$p_price;
+
+        $sqlReturn ="SELECT * FROM tbl_return_exchange WHERE or_id='$id'";
+        $rsReturn = $conn->query($sqlReturn);
+        if($rsReturn->num_rows == 0){
+          $p_id=$row['product_id'];
+          $qty =$row['quantity'];
+          $p_name = getDataBack($conn,'tbl_product','id',$p_id,'name');
+          $p_price =getDataBack($conn,'tbl_product','id',$p_id,'price') * $qty;
+          $discount = $row['discount'] ?? 0; // Fetch stored discount, default to 0
+          $p_price = $p_price - $discount;
+          $total_price +=$p_price;
+        }
+
+
     ?>
 
   <?php }
