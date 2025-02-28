@@ -61,7 +61,7 @@ if ($rs->num_rows > 0) {
                                style="width: 80px;" />
 
                                <input type="text" value="<?= (int) $discount ?>" min="0"
-              onkeydown="if(event.key === 'Enter') applyDiscount(<?= $id ?>, this.value, <?= $p_price ?>)"
+              onkeydown="if(event.key === 'Enter') applyDiscount(<?= $id ?>, this.value, <?= $p_price * $qty ?>)"
               class="form-control form-control-sm me-2 discount-input"
               placeholder="Discount"
               style="width: 90px;" />
