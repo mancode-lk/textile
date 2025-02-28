@@ -40,6 +40,7 @@ if ($rs->num_rows > 0) {
 
             <?php
             $total =0;
+            $totDiscount=0;
             // Calculate Discounted Total in a Single Query
             $sqlS = "SELECT * FROM tbl_order
                      WHERE grm_ref='$ref'";
@@ -50,6 +51,7 @@ if ($rs->num_rows > 0) {
                 $id= $rowS['id'];
               $pid = $rowS['product_id'];
               $qty = $rowS['quantity'];
+              $discount = $rowS['discount'];
 
               $priceP = getDataBack($conn,'tbl_product','id',$pid,'price');
               $sqlReturn ="SELECT * FROM tbl_return_exchange WHERE or_id='$id'";
@@ -57,11 +59,27 @@ if ($rs->num_rows > 0) {
               if($rsReturn->num_rows == 0){
                 $total +=$priceP * $qty;
               }
-
+              $totDiscount +=$discount;
             }
             }
+            $totDiscount +=$row['discount_price'];
             ?>
-            <td> LKR <?= number_format($total-$row['discount_price'], 2) ?> </td>
+            <td>
+    <?php if ($totDiscount > 0): ?>
+        <div class="fw-bold text-primary" style="font-size: 1rem;">
+            LKR <?= number_format($total - $totDiscount, 2) ?> <!-- Final Price -->
+        </div>
+        <div class="text-muted" style="font-size: 0.9rem;">
+            <s>LKR <?= number_format($total, 2) ?></s> <!-- Before Discount -->
+            <span class="text-success ms-2">(-LKR <?= number_format($totDiscount, 2) ?> Discount)</span>
+        </div>
+    <?php else: ?>
+        <div class="fw-bold text-primary" style="font-size: 1.2rem;">
+            LKR <?= number_format($total, 2) ?> <!-- Normal price when no discount -->
+        </div>
+    <?php endif; ?>
+</td>
+
 
             <td>
                 <a class="me-3" href="backend/gotopos.php?grm_id=<?= $ref ?>" >
