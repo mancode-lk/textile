@@ -60,11 +60,12 @@ if ($rs->num_rows > 0) {
                                class="form-control form-control-sm me-2 quantity-input"
                                style="width: 80px;" />
 
-                        <input type="text" value="<?= (int) $discount ?>" min="0"
-                               oninput="applyDiscount(<?= $id ?>, this.value,<?= $p_price ?>)"
-                               class="form-control form-control-sm me-2 discount-input"
-                               placeholder="Discount"
-                               style="width: 90px;" />
+                               <input type="text" value="<?= (int) $discount ?>" min="0"
+              onkeydown="if(event.key === 'Enter') applyDiscount(<?= $id ?>, this.value, <?= $p_price ?>)"
+              class="form-control form-control-sm me-2 discount-input"
+              placeholder="Discount"
+              style="width: 90px;" />
+
 
                         <span class="fw-bold me-2">LKR <span id="total_price_<?= $id ?>"><?= number_format($totalPrice, 2) ?></span></span>
 
