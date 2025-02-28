@@ -663,35 +663,48 @@ $(document).ready(function() {
     <script>
     let discountTimeout;
 
-function applyDiscount(id, dsct) {
-clearTimeout(discountTimeout); // Clear previous timeout
+    function applyDiscount(id, dsct, price) {
+        clearTimeout(discountTimeout); // Clear previous timeout
 
-discountTimeout = setTimeout(() => {
-    dsct = parseFloat(dsct) || 0;
-    $.ajax({
-        url: 'backend/update_discount.php',
-        method: 'POST',
-        data: { order_id: id, discount: dsct },
-        success: function(resp) {
-            if (resp == 200) {
-                let paid_amount = parseFloat(document.getElementById('paid_amount').value) || 0;
-                if (paid_amount !== 0) {
-                    showBalance();
-                }
-                let discountValue = document.getElementById('discount_amount').value;
-                if (discountValue !== "") {
-                    discountBill(discountValue);
-                } else {
-                    calculateTotal();
-                }
-                $('#showCartItems').load('ajax/cart_items.php');
+        discountTimeout = setTimeout(() => {
+            let discountValue;
+
+            // Check if dsct contains '%' and calculate percentage discount
+            if (dsct.includes('%')) {
+                let percentage = parseFloat(dsct.replace('%', '').trim()) || 0;
+                discountValue = Math.round((percentage / 100) * price); // Calculate percentage-based discount
             } else {
-                console.error('Update failed:', resp);
+                discountValue = parseFloat(dsct) || 0; // Direct fixed discount
             }
-        }
-    });
-}, 500); // Timeout set to 500ms (adjust if needed)
-}
+
+            $.ajax({
+                url: 'backend/update_discount.php',
+                method: 'POST',
+                data: { order_id: id, discount: discountValue },
+                success: function(resp) {
+                    if (resp == 200) {
+                        let paid_amount = parseFloat(document.getElementById('paid_amount').value) || 0;
+                        if (paid_amount !== 0) {
+                            showBalance();
+                        }
+                        let discountAmountField = document.getElementById('discount_amount');
+                        if (discountAmountField) {
+                            discountAmountField.value = discountValue; // Update discount field
+                        }
+                        if (discountValue !== "") {
+                            discountBill(discountValue);
+                        } else {
+                            calculateTotal();
+                        }
+                        $('#showCartItems').load('ajax/cart_items.php');
+                    } else {
+                        console.error('Update failed:', resp);
+                    }
+                }
+            });
+        }, 2000); // Timeout set to 500ms (adjust if needed)
+    }
+
 
     </script>
     <script>

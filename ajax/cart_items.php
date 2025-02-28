@@ -60,8 +60,8 @@ if ($rs->num_rows > 0) {
                                class="form-control form-control-sm me-2 quantity-input"
                                style="width: 80px;" />
 
-                        <input type="number" value="<?= (int) $discount ?>" min="0"
-                               oninput="applyDiscount(<?= $id ?>, this.value)"
+                        <input type="text" value="<?= (int) $discount ?>" min="0"
+                               oninput="applyDiscount(<?= $id ?>, this.value,<?= $p_price ?>)"
                                class="form-control form-control-sm me-2 discount-input"
                                placeholder="Discount"
                                style="width: 90px;" />
