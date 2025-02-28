@@ -7,6 +7,7 @@ $u_id=$_SESSION['u_id'];
 $limit = 5; // Products per page
 $page = isset($_GET['page']) ? $_GET['page'] : 1;
 $offset = ($page - 1) * $limit;
+
 // Get Total Products Count
 $sql_count = "SELECT COUNT(*) AS total FROM tbl_product";
 $result_count = $conn->query($sql_count);
@@ -20,52 +21,138 @@ $rs = $conn->query($sql);
 
 // Calculate Total Stock Value
 $stock_value = 0;
-$sql_products = "SELECT id, price, stock FROM tbl_product";
+$sql_products = "SELECT id, price FROM tbl_product";
 $rs_prod = $conn->query($sql_products);
 while ($rowProd = $rs_prod->fetch_assoc()) {
-    $p_id=$rowProd['id'];
-    $stock_value += $rowProd['price'] * currentStockCount($conn,$p_id);
+    $p_id = $rowProd['id'];
+    $stock_value += $rowProd['price'] * currentStockCount($conn, $p_id);
 }
 
-// Fetch Today's Sales Total
+// Initialize Variables to Prevent Undefined Errors
 $tot_bill_dis_today = 0;
+$total_price_before_discount = 0;
+$total_item_discount = 0;
+$total_bill_discount = 0;
+$processed_grm_refs = [];
+
 $today_date = date("Y-m-d");
 
+// Fetch Today's Sales Total
 $sql_today_sales = "
-    SELECT o.grm_ref, o.quantity, p.price, g.discount_price
+    SELECT o.grm_ref, o.product_id, o.quantity, o.discount, p.price, g.discount_price
     FROM tbl_order o
     JOIN tbl_product p ON o.product_id = p.id
     JOIN tbl_order_grm g ON o.grm_ref = g.id
     WHERE DATE(g.order_date) = '$today_date'";
 
 $rs_today_sales = $conn->query($sql_today_sales);
-$order_totals_today = [];
 
 while ($row = $rs_today_sales->fetch_assoc()) {
     $grm_ref = $row['grm_ref'];
     $quantity = $row['quantity'];
     $price = $row['price'];
-    $discount = $row['discount_price'];
+    $discount = $row['discount'];
+    $bill_discount = $row['discount_price'];
 
-    // Track total purchase amount per order reference
-    if (!isset($order_totals_today[$grm_ref])) {
-        $order_totals_today[$grm_ref] = ['total_price' => 0, 'discount' => $discount];
+    // Calculate total price BEFORE discount
+    $total_price_before_discount += ($quantity * $price);
+
+    // Accumulate total item discount directly
+    $total_item_discount += $discount;
+
+    // Ensure bill discount is applied only once per grm_ref
+    if (!isset($processed_grm_refs[$grm_ref])) {
+        $total_bill_discount += $bill_discount;
+        $processed_grm_refs[$grm_ref] = true;
     }
-    $order_totals_today[$grm_ref]['total_price'] += ($quantity * $price);
 }
 
-foreach ($order_totals_today as $order) {
+// Final Calculation
+$tot_bill_dis_today = $total_price_before_discount - ($total_item_discount + $total_bill_discount);
+
+// Fetch Total Sales Value
+$tot_bill_dis = 0;
+$sql_orders = "
+    SELECT o.grm_ref, o.quantity, o.discount, p.price, g.discount_price
+    FROM tbl_order o
+    JOIN tbl_product p ON o.product_id = p.id
+    JOIN tbl_order_grm g ON o.grm_ref = g.id";
+
+$rs_orders = $conn->query($sql_orders);
+$order_totals = [];
+$processed_orders = [];
+
+while ($row_order = $rs_orders->fetch_assoc()) {
+    $grm_ref = $row_order['grm_ref'];
+    $quantity = $row_order['quantity'];
+    $price = $row_order['price'];
+    $discount = $row_order['discount'];
+    $bill_discount = $row_order['discount_price'];
+
+    if (!isset($order_totals[$grm_ref])) {
+        $order_totals[$grm_ref] = ['total_price' => 0, 'discount' => 0, 'bill_discount' => 0];
+    }
+
+    $order_totals[$grm_ref]['total_price'] += ($quantity * $price);
+    $order_totals[$grm_ref]['discount'] += $discount;
+
+    if (!isset($processed_orders[$grm_ref])) {
+        $order_totals[$grm_ref]['bill_discount'] += $bill_discount;
+        $processed_orders[$grm_ref] = true;
+    }
+}
+
+// Final Discount Calculation
+foreach ($order_totals as $order) {
     $total_price = $order['total_price'];
     $discount = $order['discount'];
+    $bill_discount = $order['bill_discount'];
 
-    // Apply discount proportionally across the order
-    $tot_bill_dis_today += ($total_price - $discount);
+    $tot_bill_dis += ($total_price - ($discount + $bill_discount));
 }
 
-// Calculate Total Cost of All Products
+// Fetch Today's Expenses
+$tot_expenses_today = 0;
+$sql_today_expenses = "SELECT SUM(amount) AS total FROM tbl_expenses WHERE DATE(expense_date) = '$today_date'";
+$rs_today_expenses = $conn->query($sql_today_expenses);
+$row_expense = $rs_today_expenses->fetch_assoc();
+$tot_expenses_today = $row_expense['total'] ?? 0;
+
+// Calculate Till Balance for Today
+$till_balance_today = $tot_bill_dis_today - $tot_expenses_today;
+
+// Fetch Payment Breakdown for Today (Fixed Calculation)
+$total_payments_today = [
+    'cash' => 0,
+    'online' => 0,
+    'bank' => 0,
+    'credit' => 0
+];
+
+$sql_payment_today = "
+    SELECT
+        g.payment_type,
+        SUM((p.price * o.quantity) - o.discount - g.discount_price) AS total_received
+    FROM tbl_order o
+    JOIN tbl_order_grm g ON g.id = o.grm_ref
+    JOIN tbl_product p ON o.product_id = p.id
+    WHERE DATE(g.order_date) = '$today_date'
+    GROUP BY g.payment_type";
+
+$rs_payment_today = $conn->query($sql_payment_today);
+while ($row = $rs_payment_today->fetch_assoc()) {
+    switch ($row['payment_type']) {
+        case 0: $total_payments_today['cash'] = $row['total_received']; break;
+        case 1: $total_payments_today['online'] = $row['total_received']; break;
+        case 2: $total_payments_today['bank'] = $row['total_received']; break;
+        case 3: $total_payments_today['credit'] = $row['total_received']; break;
+    }
+}
+
+// Fetch Total Cost of All Products (Fixed Undefined Variable)
 $total_cost_price = 0;
 $sql_total_cost = "
-    SELECT p.id, p.cost_price, 
+    SELECT p.id, p.cost_price,
            COALESCE(SUM(e.quantity), 0) AS total_quantity
     FROM tbl_product p
     LEFT JOIN tbl_expiry_date e ON p.id = e.product_id
@@ -76,122 +163,13 @@ while ($row = $rs_total_cost->fetch_assoc()) {
     $total_cost_price += $row['cost_price'] * $row['total_quantity'];
 }
 
-// Fetch Today's Expenses
-$sql_today_expenses = "SELECT SUM(amount) AS total FROM tbl_expenses WHERE DATE(expense_date) = '$today_date'";
-$rs_today_expenses = $conn->query($sql_today_expenses);
-$row_expense = $rs_today_expenses->fetch_assoc();
-$tot_expenses_today = $row_expense['total'] ?? 0;
-
-// Fetch Total Sales Value
-$tot_bill_dis = 0;
-$sql_orders = "
-    SELECT o.grm_ref, o.quantity, p.price, g.discount_price
-    FROM tbl_order o
-    JOIN tbl_product p ON o.product_id = p.id
-    JOIN tbl_order_grm g ON o.grm_ref = g.id";
-
-$rs_orders = $conn->query($sql_orders);
-$order_totals = [];
-
-
-
-$sqlTotalValue = "SELECT 
-            COALESCE(SUM(amount), 0) AS total_payments,
-            (SELECT COALESCE(SUM(discount_amount), 0) FROM tbl_vendor_discounts) AS total_discounts,
-            (COALESCE(SUM(amount), 0) - (SELECT COALESCE(SUM(discount_amount), 0) FROM tbl_vendor_discounts)) AS total_due
-        FROM tbl_vendor_payments";
-
-$rs_TotalValue = $conn->query($sqlTotalValue);
-$row_total_value = $rs_TotalValue->fetch_assoc();
-
-$total_payments = $row_total_value['total_payments'] ?? 0;
-$total_discounts = $row_total_value['total_discounts'] ?? 0;
-$total_value_price = $row_total_value['total_due'] ?? 0;
-
-while ($row_order = $rs_orders->fetch_assoc()) {
-    $grm_ref = $row_order['grm_ref'];
-    $quantity = $row_order['quantity'];
-    $price = $row_order['price'];
-    $discount = $row_order['discount_price'];
-
-    // Track total purchase amount per order reference
-    if (!isset($order_totals[$grm_ref])) {
-        $order_totals[$grm_ref] = ['total_price' => 0, 'discount' => $discount];
-    }
-    $order_totals[$grm_ref]['total_price'] += ($quantity * $price);
-}
-
-$tot_bill_dis = 0;
-
-foreach ($order_totals as $order) {
-    $total_price = $order['total_price'];
-    $discount = $order['discount'];
-
-    // Apply discount proportionally across the order
-    $tot_bill_dis += ($total_price - $discount);
-}
-
-$till_balance_today = $tot_bill_dis_today - $tot_expenses_today;
-
-// Calculate Payment Breakdown for Today
-$total_payments_today = [
-    'cash' => 0,
-    'online' => 0,
-    'bank' => 0,
-    'credit' => 0
-];
-
-$sql_payment_today = "
-    SELECT 
-        g.payment_type, 
-        SUM((p.price * o.quantity) - (g.discount_price * (p.price * o.quantity) / sub.total_purchase)) AS total_received
-    FROM tbl_order o
-    JOIN tbl_order_grm g ON g.id = o.grm_ref
-    JOIN tbl_product p ON o.product_id = p.id
-    JOIN (
-        -- Get the total purchase amount per bill before applying discount
-        SELECT o.grm_ref, SUM(p.price * o.quantity) AS total_purchase
-        FROM tbl_order o
-        JOIN tbl_product p ON o.product_id = p.id
-        GROUP BY o.grm_ref
-    ) sub ON sub.grm_ref = g.id
-    WHERE DATE(g.order_date) = CURDATE()
-    GROUP BY g.payment_type
-";
-
-$rs_payment_today = $conn->query($sql_payment_today);
-$total_payments_today = ['cash' => 0, 'online' => 0, 'bank' => 0, 'credit' => 0];
-
-while ($row = $rs_payment_today->fetch_assoc()) {
-    switch ($row['payment_type']) {
-        case 0: $total_payments_today['cash'] = $row['total_received']; break;
-        case 1: $total_payments_today['online'] = $row['total_received']; break;
-        case 2: $total_payments_today['bank'] = $row['total_received']; break;
-        case 3: $total_payments_today['credit'] = $row['total_received']; break;
-    }
-}
-
-
-// Fetch total expenses without a vendor
-$sql_no_vendor_expenses = "SELECT SUM(amount) AS total FROM tbl_expenses WHERE DATE(expense_date) = '$today_date' AND category='petty_cash'";
-$rs_no_vendor_expenses = $conn->query($sql_no_vendor_expenses);
-$row_no_vendor_expenses = $rs_no_vendor_expenses->fetch_assoc();
-$tot_no_vendor_expenses = $row_no_vendor_expenses['total'] ?? 0;
-
-// Fetch total expenses with a vendor where payment method is 'Cash'
-$sql_vendor_cash_expenses = "SELECT SUM(amount) AS total FROM tbl_vendor_payments 
-                             WHERE DATE(payment_date) = '$today_date' 
-                             AND payment_method = 'Cash'";
-$rs_vendor_cash_expenses = $conn->query($sql_vendor_cash_expenses);
-$row_vendor_cash_expenses = $rs_vendor_cash_expenses->fetch_assoc();
-$tot_vendor_cash_expenses = $row_vendor_cash_expenses['total'] ?? 0;
-
-// Calculate total expenses for today
-$tot_expenses_today_cash = $tot_no_vendor_expenses + $tot_vendor_cash_expenses;
-
-$till_balance = $total_payments_today['cash'] - $tot_expenses_today_cash;
+// Calculate Till Balance Including Payments
+$till_balance = $total_payments_today['cash'] - $tot_expenses_today;
 
 ?>
+
+
+
 <style>
     .dashboard-card {
         transition: transform 0.3s ease;
