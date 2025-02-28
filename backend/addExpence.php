@@ -49,7 +49,7 @@ $stmt->close();
 
         // If vendor_id is not 0, insert into tbl_vendor_payments
         if ($vendor_id != 0) {
-            $payment_method = $_POST['payment_method'] ?? 'OnlinePay'; // Default to cash if not provided
+            $payment_method = $_POST['payment_type'] ?? 'OnlinePay'; // Default to cash if not provided
             $reference_number = $_POST['reference_number'] ?? null; // Optional reference number
             $remarks = $_POST['remarks'] ?? null; // Optional remarks
 
@@ -63,6 +63,8 @@ $stmt->close();
 
         // Commit transaction
         $conn->commit();
+
+
 
         // Redirect with success status
         header("Location: ../manage_expenses.php?status=success");
