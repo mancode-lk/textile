@@ -212,7 +212,7 @@ $rs_expenses = $conn->query($sql_expenses);
                     </div>
                     <div class="card-body">
                       <table class="table table-bordered table-hover table-striped">
-    <thead class="">
+    <thead>
         <tr>
             <th>Amount</th>
             <th>Description</th>
@@ -224,43 +224,60 @@ $rs_expenses = $conn->query($sql_expenses);
         </tr>
     </thead>
     <tbody id="expenseTable">
-        <?php if ($rs_expenses->num_rows > 0): ?>
-            <?php while ($rows = $rs_expenses->fetch_assoc()): ?>
-                <tr id="row-<?= $rows['expense_id'] ?>">
-                    <td>Rs. <?= number_format($rows['amount'], 2) ?></td>
-                    <td><?= htmlspecialchars($rows['description'], ENT_QUOTES) ?></td>
-                    <td><span class="badge bg-info"><?= ucfirst($rows['category']) ?></span></td>
-                    <td><?= date('Y-m-d', strtotime($rows['expense_date'])) ?></td>
-                    <td><?= ($rows['category'] == 'vendor' && $rows['vendor_name']) ? $rows['vendor_name'] : "-" ?></td>
-                    <td>
-                        <?php if ($rows['cash_in_out'] == 1): ?>
-                            <span class="badge bg-success">CASH IN</span>
-                        <?php elseif ($rows['cash_in_out'] == 2): ?>
-                            <span class="badge bg-danger">CASH OUT</span>
-                        <?php else: ?>
-                            <span class="badge bg-secondary">UNKNOWN</span>
-                        <?php endif; ?>
-                    </td>
-                    <td>
-                        <button class="btn btn-warning btn-sm editExpenseBtn"
-                            data-id="<?= $rows['expense_id'] ?>"
-                            data-amount="<?= $rows['amount'] ?>"
-                            data-description="<?= htmlspecialchars($rows['description'], ENT_QUOTES) ?>"
-                            data-category="<?= $rows['category'] ?>"
-                            data-date="<?= date('Y-m-d', strtotime($rows['expense_date'])) ?>"
-                            data-vendor="<?= $rows['vendor_name'] ?>">
-                            Edit
-                        </button>
-                    </td>
-                </tr>
-            <?php endwhile; ?>
+        <?php
+            $closing_balance = 0; // Initialize closing balance
+
+            if ($rs_expenses->num_rows > 0):
+                while ($rows = $rs_expenses->fetch_assoc()):
+                    // Update closing balance
+                    if ($rows['cash_in_out'] == 1) {
+                        $closing_balance += $rows['amount']; // CASH IN adds to balance
+                    } elseif ($rows['cash_in_out'] == 2) {
+                        $closing_balance -= $rows['amount']; // CASH OUT subtracts from balance
+                    }
+        ?>
+        <tr id="row-<?= $rows['expense_id'] ?>">
+            <td>Rs. <?= number_format($rows['amount'], 2) ?></td>
+            <td><?= htmlspecialchars($rows['description'], ENT_QUOTES) ?></td>
+            <td><span class="badge bg-info"><?= ucfirst($rows['category']) ?></span></td>
+            <td><?= date('Y-m-d', strtotime($rows['expense_date'])) ?></td>
+            <td><?= ($rows['category'] == 'vendor' && $rows['vendor_name']) ? $rows['vendor_name'] : "-" ?></td>
+            <td>
+                <?php if ($rows['cash_in_out'] == 1): ?>
+                    <span class="badge bg-success">CASH IN</span>
+                <?php elseif ($rows['cash_in_out'] == 2): ?>
+                    <span class="badge bg-danger">CASH OUT</span>
+                <?php else: ?>
+                    <span class="badge bg-secondary">UNKNOWN</span>
+                <?php endif; ?>
+            </td>
+            <td>
+                <button class="btn btn-warning btn-sm editExpenseBtn"
+                    data-id="<?= $rows['expense_id'] ?>"
+                    data-amount="<?= $rows['amount'] ?>"
+                    data-description="<?= htmlspecialchars($rows['description'], ENT_QUOTES) ?>"
+                    data-category="<?= $rows['category'] ?>"
+                    data-date="<?= date('Y-m-d', strtotime($rows['expense_date'])) ?>"
+                    data-vendor="<?= $rows['vendor_name'] ?>">
+                    Edit
+                </button>
+            </td>
+        </tr>
+        <?php endwhile; ?>
         <?php else: ?>
-            <tr>
-                <td colspan="7" class="text-center">No records found.</td>
-            </tr>
+        <tr>
+            <td colspan="7" class="text-center">No records found.</td>
+        </tr>
         <?php endif; ?>
     </tbody>
+    <tfoot>
+        <tr class="table-primary">
+            <td colspan="6" class="text-end"><strong>Closing Balance:</strong></td>
+            <td><strong>Rs. <?= number_format($closing_balance, 2) ?></strong></td>
+        </tr>
+    </tfoot>
 </table>
+
 
                     </div>
                 </div>
