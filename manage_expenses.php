@@ -119,15 +119,24 @@ $rs_expenses = $conn->query($sql_expenses);
                                 <input type="number" name="amount" class="form-control" required step="0.01">
                             </div>
                             <div class="mb-3">
-                                <label for="description" class="form-label">Description</label>
-                                <input type="text" name="description" class="form-control" required>
-                            </div>
-                            <div class="mb-3">
                                 <label for="category" class="form-label">Category</label>
-                                <select name="category" id="category" class="form-control" required>
-
+                                <select name="category" id="category" class="form-control" onchange="updateDescription(this.value)" required>
+                                    <option value="">Select Type</option>
+                                    <option value="Opening Balance">Opening Balance</option>
                                     <option value="petty_cash">Petty Cash</option>
                                     <option value="vendor">Vendor</option> <!-- Added Vendor option -->
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="description" class="form-label">Description</label>
+                                <input type="text" name="description" id="description_petty" class="form-control" required>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="category" class="form-label">Cash IN/OUT</label>
+                                <select name="cash_in_out" id="cash_in_out" class="form-control" required>
+                                  <option value="2">CASH OUT</option> <!-- Added Vendor option -->
+                                    <option value="1">CASH IN</option>
                                 </select>
                             </div>
 
@@ -164,7 +173,7 @@ $rs_expenses = $conn->query($sql_expenses);
 
                             <div class="mb-3">
                                 <label for="expense_date" class="form-label">Expense Date</label>
-                                <input type="date" name="expense_date" class="form-control" required>
+                                <input type="date" name="expense_date" value=<?= date('Y-m-d') ?> class="form-control" required>
                             </div>
                             <button type="submit" class="btn btn-success w-100">Add Expense</button>
                         </form>
@@ -202,46 +211,57 @@ $rs_expenses = $conn->query($sql_expenses);
                         <h4 class="mb-0">All Expenses</h4>
                     </div>
                     <div class="card-body">
-                        <table class="table table-bordered table-hover">
-                            <thead class="table-dark">
-                                <tr>
-                                    <th>Amount</th>
-                                    <th>Description</th>
-                                    <th>Category</th>
-                                    <th>Date</th>
-                                    <th>Vendor</th>
-                                    <th>Action</th>
-                                </tr>
-                            </thead>
-                            <tbody id="expenseTable">
-    <?php if ($rs_expenses->num_rows > 0): ?>
-        <?php while ($rows = $rs_expenses->fetch_assoc()): ?>
-            <tr id="row-<?= $rows['expense_id'] ?>">
-                <td>Rs. <?= number_format($rows['amount'], 2) ?></td>
-                <td><?= $rows['description'] ?></td>
-                <td><span class="badge bg-info"><?= ucfirst($rows['category']) ?></span></td>
-                <td><?= date('Y-m-d', strtotime($rows['expense_date'])) ?></td>
-                <td><?= ($rows['category'] == 'vendor' && $rows['vendor_name']) ? $rows['vendor_name'] : "-" ?></td>
-                <td>
-                    <button class="btn btn-warning btn-sm editExpenseBtn"
-                        data-id="<?= $rows['expense_id'] ?>"
-                        data-amount="<?= $rows['amount'] ?>"
-                        data-description="<?= htmlspecialchars($rows['description'], ENT_QUOTES) ?>"
-                        data-category="<?= $rows['category'] ?>"
-                        data-date="<?= date('Y-m-d', strtotime($rows['expense_date'])) ?>"
-                        data-vendor="<?= $rows['vendor_name'] ?>">
-                        Edit
-                    </button>
-                </td>
-            </tr>
-        <?php endwhile; ?>
-    <?php else: ?>
+                      <table class="table table-bordered table-hover table-striped">
+    <thead class="">
         <tr>
-            <td colspan="6" class="text-center">No records found.</td>
+            <th>Amount</th>
+            <th>Description</th>
+            <th>Category</th>
+            <th>Date</th>
+            <th>Vendor</th>
+            <th>Type</th> <!-- New column for Cash In/Out -->
+            <th>Action</th>
         </tr>
-    <?php endif; ?>
-</tbody>
-                        </table>
+    </thead>
+    <tbody id="expenseTable">
+        <?php if ($rs_expenses->num_rows > 0): ?>
+            <?php while ($rows = $rs_expenses->fetch_assoc()): ?>
+                <tr id="row-<?= $rows['expense_id'] ?>">
+                    <td>Rs. <?= number_format($rows['amount'], 2) ?></td>
+                    <td><?= htmlspecialchars($rows['description'], ENT_QUOTES) ?></td>
+                    <td><span class="badge bg-info"><?= ucfirst($rows['category']) ?></span></td>
+                    <td><?= date('Y-m-d', strtotime($rows['expense_date'])) ?></td>
+                    <td><?= ($rows['category'] == 'vendor' && $rows['vendor_name']) ? $rows['vendor_name'] : "-" ?></td>
+                    <td>
+                        <?php if ($rows['cash_in_out'] == 1): ?>
+                            <span class="badge bg-success">CASH IN</span>
+                        <?php elseif ($rows['cash_in_out'] == 2): ?>
+                            <span class="badge bg-danger">CASH OUT</span>
+                        <?php else: ?>
+                            <span class="badge bg-secondary">UNKNOWN</span>
+                        <?php endif; ?>
+                    </td>
+                    <td>
+                        <button class="btn btn-warning btn-sm editExpenseBtn"
+                            data-id="<?= $rows['expense_id'] ?>"
+                            data-amount="<?= $rows['amount'] ?>"
+                            data-description="<?= htmlspecialchars($rows['description'], ENT_QUOTES) ?>"
+                            data-category="<?= $rows['category'] ?>"
+                            data-date="<?= date('Y-m-d', strtotime($rows['expense_date'])) ?>"
+                            data-vendor="<?= $rows['vendor_name'] ?>">
+                            Edit
+                        </button>
+                    </td>
+                </tr>
+            <?php endwhile; ?>
+        <?php else: ?>
+            <tr>
+                <td colspan="7" class="text-center">No records found.</td>
+            </tr>
+        <?php endif; ?>
+    </tbody>
+</table>
+
                     </div>
                 </div>
             </div>
@@ -384,7 +404,7 @@ document.getElementById("clearFilter").addEventListener("click", function () {
     document.getElementById("category").addEventListener("change", function () {
     const vendorDropdown = document.getElementById("vendorDropdown");
     const paymentTypeDropdown = document.getElementById("paymentTypeDropdown");
-    
+
     if (this.value === "vendor") {
         vendorDropdown.style.display = "block";
         paymentTypeDropdown.style.display = "block";
@@ -440,4 +460,13 @@ document.getElementById("clearFilter").addEventListener("click", function () {
             }
         });
     }
+    function updateDescription(inputValue) {
+      if(inputValue == "Opening Balance"){
+        let todayDate = new Date().toISOString().split('T')[0]; // Format: YYYY-MM-DD
+        document.getElementById('description_petty').value = inputValue + " - " + todayDate;
+      }
+      else {
+        document.getElementById('description_petty').value = "";
+      }
+}
 </script>

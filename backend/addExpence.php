@@ -6,10 +6,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $description = $_POST['description'];
     $category = $_POST['category'];
     $expense_date = $_POST['expense_date'];
+    $cash_in_out = $_POST['cash_in_out'];
+
 
     // $vendor_id = (int)$_POST['vendor_id'];
-    // $payment_type = $_POST['payment_type']; 
-    
+    // $payment_type = $_POST['payment_type'];
+
     // Determine vendor_id based on category
     if ($category == 'petty_cash') {
         $vendor_id = 0; // Petty cash has no vendor
@@ -29,13 +31,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     try {
         // Insert into tbl_expenses
-        $sql = "INSERT INTO tbl_expenses (amount, description, category, expense_date, vendor_id, created_at) 
-                VALUES (?, ?, ?, ?, ?, NOW())";
-        $stmt = $conn->prepare($sql);
-        $stmt->bind_param("dsssi", $amount, $description, $category, $expense_date, $vendor_id);
-        $stmt->execute();
-        $expense_id = $stmt->insert_id; // Get the last inserted expense_id
-        $stmt->close();
+        $sql = "INSERT INTO tbl_expenses (amount, description, category, expense_date, vendor_id, cash_in_out, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, NOW())";
+
+$stmt = $conn->prepare($sql);
+
+if (!$stmt) {
+    die("Prepare failed: " . $conn->error); // Debugging statement
+}
+// Corrected Bind Parameters: "dsssii" (double, string, string, string, integer, integer)
+$stmt->bind_param("dsssii", $amount, $description, $category, $expense_date, $vendor_id, $cash_in_out);
+if (!$stmt->execute()) {
+    die("Execute failed: " . $stmt->error); // Debugging statement
+}
+$expense_id = $stmt->insert_id; // Get last inserted expense_id
+$stmt->close();
 
         // If vendor_id is not 0, insert into tbl_vendor_payments
         if ($vendor_id != 0) {
@@ -43,7 +53,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $reference_number = $_POST['reference_number'] ?? null; // Optional reference number
             $remarks = $_POST['remarks'] ?? null; // Optional remarks
 
-            $sql = "INSERT INTO tbl_vendor_payments (vendor_id, expense_id, amount, payment_date, payment_method, reference_number, remarks) 
+            $sql = "INSERT INTO tbl_vendor_payments (vendor_id, expense_id, amount, payment_date, payment_method, reference_number, remarks)
                     VALUES (?, ?, ?, ?, ?, ?, ?)";
             $stmt = $conn->prepare($sql);
             $stmt->bind_param("iidssss", $vendor_id, $expense_id, $amount, $expense_date, $payment_method, $reference_number, $remarks);
