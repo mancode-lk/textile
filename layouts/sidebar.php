@@ -15,6 +15,10 @@
         <li class="<?php if($pg_name=='pos_grm.php'){echo('active');} ?>">
     <a href="pos_grm.php"><i class="fas fa-cash-register"></i><span> Bills</span></a>
 </li>
+<li class="<?php if($pg_name=='manage_expenses.php'){echo('active');} ?>">
+    <a href="manage_expenses.php"><i class="fas fa-money-bill-wave"></i><span> Expenses</span></a>
+</li>
+
 
 
         <li class="<?php if($pg_name=='vendorlist.php'){echo('active');} ?>" >
