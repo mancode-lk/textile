@@ -112,53 +112,12 @@
             </div>
             <hr />
             <!-- Payment Options -->
-            <div class="row g-3 align-items-center">
-              <div class="col-md-4">
-                <label class="form-label mb-0">
-                  <i class="fas fa-money-bill-wave me-1"></i>Payment Method
-                </label>
-                <div>
-                  <div class="form-check form-check-inline">
-                    <input class="form-check-input" type="radio" name="payment" id="payment_method" value="0" checked />
-                    <label class="form-check-label" for="cash">Cash</label>
-                  </div>
-                  <div class="form-check form-check-inline">
-                    <input class="form-check-input" type="radio" name="payment" id="payment_method" value="1" />
-                    <label class="form-check-label" for="card">Online Pay</label>
-                  </div>
-                  <div class="form-check form-check-inline">
-                    <input class="form-check-input" type="radio" name="payment" id="payment_method" value="2" />
-                    <label class="form-check-label" for="credit">Bank Transfer</label>
-                  </div>
-                  <div class="form-check form-check-inline">
-                    <input class="form-check-input" type="radio" name="payment" id="payment_method" value="3" />
-                    <label class="form-check-label" for="credit">Credit</label>
-                  </div>
-                </div>
-              </div>
-              <input type="hidden" id="totPrice" value="">
-              <!-- Amount Paid -->
-              <div class="col-md-4">
-                <label class="form-label">
-                  <i class="fas fa-hand-holding-usd me-1"></i>Amount Paid (LKR)
-                </label>
-                <div class="input-group">
-                  <span class="input-group-text"><i class="fas fa-rupee-sign"></i></span>
-                  <input type="number" id="paid_amount" onkeyup="showBalance()" class="form-control" placeholder="Enter amount" />
-                </div>
-              </div>
-              <!-- Change -->
-              <div class="col-md-4 text-end">
-                <label class="form-label d-block">
-                  <i class="fas fa-exchange-alt me-1"></i>Change
-                </label>
-                <p class="h5 mb-0 fw-bold">LKR <span id="balanceToGive"></span>.00</p>
-              </div>
-            </div>
+            <input type="hidden" id="totPrice" value="">
             <hr>
             <div class="row">
               <div class="col-lg-6">
-                <button type="button" class="btn btn-primary btn-sm" id="complete_bill">Complete Bill</button>
+                <button type="button" class="btn btn-primary btn-sm" id="pre_complete" onclick="pre_complete()">Complete Bill</button>
+                <!-- <button type="button" class="btn btn-primary btn-sm" id="complete_bill">Complete Bill</button> -->
               </div>
               <div class="col-lg-6">
                 <button type="button" class="btn btn-secondary btn-sm" id="add_to_draft">Add to Draft</button>
@@ -262,6 +221,57 @@
     </div>
 </div>
 
+<!-- Payment Modal -->
+<div class="modal fade" id="paymentModal" tabindex="-1" aria-labelledby="paymentModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title" id="paymentModalLabel">Payment Details</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form id="paymentForm">
+          <!-- Payment Method -->
+          <div class="mb-3">
+            <label class="form-label"><i class="fas fa-money-bill-wave me-1"></i> Payment Method</label>
+            <select id="payment_method" class="form-select">
+              <option value="0">Cash</option>
+              <option value="1">Online Pay</option>
+              <option value="2">Bank Transfer</option>
+              <option value="3">Credit</option>
+            </select>
+          </div>
+
+          <!-- Amount Paid -->
+          <div class="mb-3">
+            <label class="form-label"><i class="fas fa-hand-holding-usd me-1"></i> Amount Paid (LKR)</label>
+            <div class="input-group">
+              <span class="input-group-text"><i class="fas fa-rupee-sign"></i></span>
+              <input type="number" id="paid_amount" onkeyup="showBalance()" class="form-control" onkeyup="updateChange()" placeholder="Enter amount">
+            </div>
+          </div>
+
+          <!-- Change -->
+          <div class="mb-3">
+            <label class="form-label d-block">
+              <i class="fas fa-exchange-alt me-1"></i>Change
+            </label>
+            <p class="h5 mb-0 fw-bold">LKR <span id="balanceToGive"></span>.00</p>
+          </div>
+
+          <input type="hidden" id="modal_totPrice" value="">
+
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" id="complete_bill_without_bill">Complete without bill </button>
+        <button type="button" class="btn btn-success" id="complete_bill">Complete & Print Bill </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
   <!-- Bootstrap 5 JS Bundle -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <!-- jQuery (Required for AJAX) -->
@@ -273,6 +283,10 @@
 </body>
 </html>
 <script type="text/javascript">
+
+function pre_complete(){
+  $('#paymentModal').modal('show');
+}
 
 $(document).ready(function() {
     $("#customerSelect").select2({
@@ -423,7 +437,7 @@ $(document).ready(function() {
     // Complete bill click event
     $("#complete_bill").click(function() {
         let discount_amount = $("#discount_amount").val() || 0;
-        let payment_method = $("input[name='payment']:checked").val();
+        let payment_method = $("#payment_method").val();
 
         var selectedCustomerName = $("#selectedCustomerName").text().trim();
         if (selectedCustomerName === "No Customer Selected" && payment_method == 3) {
@@ -437,7 +451,46 @@ $(document).ready(function() {
             data: {
                 discount_amount: discount_amount,
                 payment_method: payment_method,
-                action: "complete_bill"
+                action: "complete_bill",
+                act:0
+            },
+            beforeSend: function() {
+                $("#complete_bill").prop("disabled", true).text("Processing...");
+            },
+            success: function(response) {
+                if (response == 200) {
+                    window.location.href = "pos_grm.php";
+                } else {
+                    window.location.href = "print_bill.php?bill_id=" + response; 
+                }
+            },
+            error: function(xhr, status, error) {
+                alert("Failed to complete bill. Try again.");
+                $("#complete_bill").prop("disabled", false).text("Complete Bill");
+                console.error(error);
+            }
+        });
+    });
+
+
+    $("#complete_bill_without_bill").click(function() {
+        let discount_amount = $("#discount_amount").val() || 0;
+        let payment_method = $("#payment_method").val();
+
+        var selectedCustomerName = $("#selectedCustomerName").text().trim();
+        if (selectedCustomerName === "No Customer Selected" && payment_method == 3) {
+            alert("For the credit bill customer details required");
+            return false;
+        }
+
+        $.ajax({
+            url: "backend/save_bill.php",
+            method: "POST",
+            data: {
+                discount_amount: discount_amount,
+                payment_method: payment_method,
+                action: "complete_bill",
+                act:1
             },
             beforeSend: function() {
                 $("#complete_bill").prop("disabled", true).text("Processing...");
