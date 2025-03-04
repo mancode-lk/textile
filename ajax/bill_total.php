@@ -31,11 +31,23 @@
         }
 
         // Apply additional discount if provided
-        if (isset($_REQUEST['disc_price'])) {
-            $extra_discount = $_REQUEST['disc_price'];
-            $total_price -= $extra_discount;
-            $total_discount += $extra_discount;
-        }
+        if (isset($_REQUEST['disc_price']) && $_REQUEST['disc_price'] !== '') {
+    $extra_discount = $_REQUEST['disc_price'];
+
+    if (strpos($extra_discount, '%') !== false) {
+        // Extract numeric value and calculate percentage discount
+        $discount_percent = floatval(str_replace('%', '', $extra_discount));
+        $extra_discount = ($discount_percent / 100) * $total_price;
+    } else {
+        // Ensure it's a valid numeric value
+        $extra_discount = floatval($extra_discount);
+    }
+
+    // Apply discount
+    $total_price -= $extra_discount;
+    $total_discount += $extra_discount;
+}
+
 
         // Logic for amount to be paid or refunded
         if ($total_price > $returnAmount) {
