@@ -59,82 +59,79 @@ if ($rs_expenses->num_rows > 0) {
             </div>
         </div>
 
-          <!-- Add Expense Form -->
-          <div class="row mt-4">
-            <div class="col-lg-6 mx-auto">
-                <div class="card shadow">
-                    <div class="card-header bg-dark text-white">
-                        <h4 class="mb-0">Add New Expense</h4>
+        <div class="row mt-4">
+    <div class="col-lg-6 mx-auto">
+        <div class="card shadow">
+            <div class="card-header bg-dark text-white">
+                <h4 class="mb-0">Add New Expense</h4>
+            </div>
+            <div class="card-body">
+                <form action="backend/addExpence.php" method="POST">
+                    <div class="mb-3">
+                        <label for="amount" class="form-label">Amount</label>
+                        <input type="number" name="amount" class="form-control" required step="0.01">
                     </div>
-                    <div class="card-body">
-                        <form action="backend/addExpence.php" method="POST">
-                            <div class="mb-3">
-                                <label for="amount" class="form-label">Amount</label>
-                                <input type="number" name="amount" class="form-control" required step="0.01">
-                            </div>
-                            <div class="mb-3">
-                                <label for="category" class="form-label">Category</label>
-                                <select name="category" id="category" class="form-control" onchange="updateDescription(this.value)" required>
-                                    <option value="">Select Type</option>
-                                    <option value="Opening Balance">Opening Balance</option>
-                                    <option value="petty_cash">Petty Cash</option>
-                                    <option value="vendor">Vendor</option> <!-- Added Vendor option -->
-                                </select>
-                            </div>
-                            <div class="mb-3">
-                                <label for="description" class="form-label">Description</label>
-                                <input type="text" name="description" id="description_petty" class="form-control" required>
-                            </div>
-
-                            <div class="mb-3">
-                                <label for="category" class="form-label">Cash IN/OUT</label>
-                                <select name="cash_in_out" id="cash_in_out" class="form-control" required>
-                                  <option value="2">CASH OUT</option> <!-- Added Vendor option -->
-                                    <option value="1">CASH IN</option>
-                                </select>
-                            </div>
-
-                            <!-- Vendor Dropdown -->
-                           <!-- Vendor Dropdown -->
-<div class="mb-3" id="vendorDropdown" style="display:none;">
-    <label for="vendor_id" class="form-label">Select Vendor</label>
-    <select name="vendor_id" id="vendor_id" class="form-control">
-        <?php
-        // Fetch all vendors
-        $sql_vendors = "SELECT * FROM tbl_vendors";
-        $result_vendors = $conn->query($sql_vendors);
-        if ($result_vendors->num_rows > 0) {
-            while ($vendor = $result_vendors->fetch_assoc()) {
-                echo "<option value='" . $vendor['vendor_id'] . "'>" . $vendor['vendor_name'] . "</option>";
-            }
-        } else {
-            echo "<option value=''>No Vendors Available</option>";
-        }
-        ?>
-    </select>
-</div>
-
-<!-- Payment Type Dropdown (Visible only when Vendor is selected) -->
-<div class="mb-3" id="paymentTypeDropdown" style="display:none;">
-    <label for="payment_type" class="form-label">Select Payment Type</label>
-    <select name="payment_type" id="payment_type" class="form-control">
-        <option value="">-- Select Payment Type --</option>
-        <option value="cash">Cash</option>
-        <option value="onlinePayment">Online Payment</option>
-    </select>
-</div>
-
-
-                            <div class="mb-3">
-                                <label for="expense_date" class="form-label">Expense Date</label>
-                                <input type="date" name="expense_date" value=<?= date('Y-m-d') ?> class="form-control" required>
-                            </div>
-                            <button type="submit" class="btn btn-success w-100">Add Expense</button>
-                        </form>
+                    <div class="mb-3">
+                        <label for="category" class="form-label">Category</label>
+                        <select name="category" id="category" class="form-control" onchange="updateCashInOut(this.value)" required>
+                            <option value="">Select Type</option>
+                            <option value="Opening Balance">Opening Balance</option>
+                            <option value="petty_cash">Petty Cash</option>
+                            <option value="vendor">Vendor</option>
+                        </select>
                     </div>
-                </div>
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description</label>
+                        <input type="text" name="description" id="description_petty" class="form-control" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="cash_in_out" class="form-label">Cash IN/OUT</label>
+                        <select name="cash_in_out" id="cash_in_out" class="form-control" required>
+                            <option value="2">CASH OUT</option>
+                            <option value="1">CASH IN</option>
+                        </select>
+                    </div>
+
+                    <!-- Vendor Dropdown -->
+                    <div class="mb-3" id="vendorDropdown" style="display:none;">
+                        <label for="vendor_id" class="form-label">Select Vendor</label>
+                        <select name="vendor_id" id="vendor_id" class="form-control">
+                            <?php
+                            // Fetch all vendors
+                            $sql_vendors = "SELECT * FROM tbl_vendors";
+                            $result_vendors = $conn->query($sql_vendors);
+                            if ($result_vendors->num_rows > 0) {
+                                while ($vendor = $result_vendors->fetch_assoc()) {
+                                    echo "<option value='" . $vendor['vendor_id'] . "'>" . $vendor['vendor_name'] . "</option>";
+                                }
+                            } else {
+                                echo "<option value=''>No Vendors Available</option>";
+                            }
+                            ?>
+                        </select>
+                    </div>
+
+                    <!-- Payment Type Dropdown -->
+                    <div class="mb-3" id="paymentTypeDropdown" style="display:none;">
+                        <label for="payment_type" class="form-label">Select Payment Type</label>
+                        <select name="payment_type" id="payment_type" class="form-control">
+                            <option value="">-- Select Payment Type --</option>
+                            <option value="cash">Cash</option>
+                            <option value="onlinePayment">Online Payment</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="expense_date" class="form-label">Expense Date</label>
+                        <input type="date" name="expense_date" value="<?= date('Y-m-d') ?>" class="form-control" required>
+                    </div>
+                    <button type="submit" class="btn btn-success w-100">Add Expense</button>
+                </form>
             </div>
         </div>
+    </div>
+</div>
 
 
         <!-- Filter by Date or Month -->
@@ -418,4 +415,19 @@ document.getElementById("clearFilter").addEventListener("click", function () {
         document.getElementById('description_petty').value = "";
       }
 }
+
+function updateCashInOut(value) {
+    var cashInOutSelect = document.getElementById("cash_in_out");
+    var descriptionInput = document.getElementById("description_petty");
+
+    if (value === "Opening Balance") {
+        cashInOutSelect.value = "1"; // Select CASH IN
+        let todayDate = new Date().toISOString().split('T')[0]; // Format: YYYY-MM-DD
+        descriptionInput.value = value + " - " + todayDate; // Use 'value' instead of 'inputValue'
+    } else {
+        cashInOutSelect.value = "2"; // Select CASH OUT
+        descriptionInput.value = ""; // Clear description for other categories
+    }
+}
+
 </script>
