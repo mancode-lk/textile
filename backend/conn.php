@@ -43,6 +43,41 @@ function generateOrderRef($conn) {
 }
 
 
+function getReturnValue($conn, $p_id){
+    $sqlReturn = "
+        SELECT SUM(t_o.quantity * p.price) AS returnValue
+        FROM tbl_return_exchange AS t_re
+        JOIN tbl_order AS t_o ON t_o.id = t_re.or_id
+        JOIN tbl_product AS p ON p.id = t_o.product_id
+        WHERE t_re.p_id = '$p_id'
+    ";
+    $rsReturn = $conn->query($sqlReturn);
+
+    $returnValue = 0;
+    if ($rsReturn && $rsReturn->num_rows > 0) {
+        $rowReturn = $rsReturn->fetch_assoc();
+        $returnValue = $rowReturn['returnValue'] ?: 0;
+    }
+    return $returnValue;
+}
+
+function getReturnCost($conn, $p_id){
+    $sqlReturn = "
+        SELECT SUM(t_o.quantity * p.cost_price) AS returnCost
+        FROM tbl_return_exchange AS t_re
+        JOIN tbl_order AS t_o ON t_o.id = t_re.or_id
+        JOIN tbl_product AS p ON p.id = t_o.product_id
+        WHERE t_re.p_id = '$p_id'
+    ";
+    $rsReturn = $conn->query($sqlReturn);
+
+    $returnCost = 0;
+    if ($rsReturn && $rsReturn->num_rows > 0) {
+        $rowReturn = $rsReturn->fetch_assoc();
+        $returnCost = $rowReturn['returnCost'] ?: 0;
+    }
+    return $returnCost;
+}
 function currentStockCount($conn, $p_id) {
     // 1) Get total ordered quantity for the product
     //    EXCLUDING orders that have a matching row in tbl_return_exchange.
