@@ -16,7 +16,7 @@ if ($rs_opening_balance->num_rows > 0) {
 }
 
 // SQL for total expenses today
-$sql_daily = "SELECT SUM(amount) AS total FROM tbl_expenses WHERE DATE(expense_date) = CURDATE()";
+$sql_daily = "SELECT SUM(amount) AS total FROM tbl_expenses WHERE DATE(expense_date) = CURDATE() AND cash_in_out=2";
 $rs_daily = $conn->query($sql_daily);
 $total_daily = ($rs_daily->num_rows > 0) ? $rs_daily->fetch_assoc()['total'] : 0;
 
