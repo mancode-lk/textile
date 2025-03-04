@@ -315,8 +315,23 @@ while ($rowP = $rs_payment_today->fetch_assoc()) {
     }
 }
 
+$sqlReturn = "SELECT 
+            SUM(IF(o.discount IS NOT NULL, (p.price - o.discount), p.price)) AS total_amount
+        FROM tbl_return_exchange re
+        LEFT JOIN tbl_product p ON re.p_id = p.id
+        LEFT JOIN tbl_order o ON re.or_id = o.id
+        WHERE DATE(re.order_created) = CURDATE()";
+
+$resultReturn = $conn->query($sqlReturn);
+
+if ($resultReturn->num_rows > 0) {
+    $row = $resultReturn->fetch_assoc();
+    $total_amount_return = $row['total_amount'] ?? 0;
+   
+}
+
 // 8) Till Balance: (cash received + any cash-in) - total expenses
-$till_balance = ($total_payments_today['cash'] + $cash_in_total) - $tot_expenses_today +$total_daily_cash_in;
+$till_balance = ($total_payments_today['cash'] + $cash_in_total) - $tot_expenses_today -$total_amount_return +$total_daily_cash_in;
 ?>
 
 <style>
