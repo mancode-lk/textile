@@ -611,14 +611,39 @@ $till_balance = ($total_payments_today['cash'] + $cash_in_total) - $tot_expenses
                         </div>
                         <!-- Pagination -->
                         <nav>
-                            <ul class="pagination justify-content-end">
-                                <?php for ($i = 1; $i <= $total_pages; $i++): ?>
-                                    <li class="page-item <?= ($i == $page) ? 'active' : '' ?>">
-                                        <a class="page-link" href="?page=<?= $i; ?>"><?= $i; ?></a>
-                                    </li>
-                                <?php endfor; ?>
-                            </ul>
-                        </nav>
+    <ul class="pagination justify-content-end">
+        <?php
+        $visible_pages = 5; // Number of visible page links
+        $start_page = max(1, $page - floor($visible_pages / 2));
+        $end_page = min($total_pages, $start_page + $visible_pages - 1);
+
+        // Ensure at least $visible_pages are shown properly
+        if ($end_page - $start_page < $visible_pages - 1) {
+            $start_page = max(1, $end_page - $visible_pages + 1);
+        }
+
+        // Previous Button
+        if ($page > 1): ?>
+            <li class="page-item">
+                <a class="page-link" href="?page=<?= $page - 1; ?>">&laquo; Prev</a>
+            </li>
+        <?php endif; ?>
+
+        <!-- Page Numbers -->
+        <?php for ($i = $start_page; $i <= $end_page; $i++): ?>
+            <li class="page-item <?= ($i == $page) ? 'active' : '' ?>">
+                <a class="page-link" href="?page=<?= $i; ?>"><?= $i; ?></a>
+            </li>
+        <?php endfor; ?>
+
+        <!-- Next Button -->
+        <?php if ($page < $total_pages): ?>
+            <li class="page-item">
+                <a class="page-link" href="?page=<?= $page + 1; ?>">Next &raquo;</a>
+            </li>
+        <?php endif; ?>
+    </ul>
+</nav>
                     </div>
                 </div>
             </div>
