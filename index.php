@@ -437,80 +437,97 @@ $till_balance = ($total_payments_today['cash'] + $cash_in_total) - $tot_expenses
 
             <!-- Payments Overview Section -->
             <div class="col-12">
-                <h4 class="section-title">Payments Overview</h4>
-                <div class="row g-4">
-                    <div class="col-xl-3 col-lg-4 col-md-6">
-                        <div class="card dashboard-card shadow-sm">
-                            <div class="card-header bg-dark text-white">
-                                <h6 class="mb-0">Cash Flow</h6>
-                            </div>
-                            <div class="card-body">
-                                <div class="metric-title">Received via Cash</div>
-                                <div class="metric-value">
-                                    Rs.<?= number_format($total_payments_today['cash'], 2) ?>
-                                </div>
-                                <div class="metric-title mt-2">Till Balance</div>
-                                <div class="metric-value text-success">
-                                    Rs.<?= number_format($till_balance, 2) ?>
-                                </div>
-                            </div>
-                        </div>
+    <h4 class="section-title">Payments Overview</h4>
+    <div class="row g-4">
+        <!-- Cash Flow -->
+        <div class="col-xl-3 col-lg-4 col-md-6">
+            <div class="card dashboard-card shadow-sm">
+                <div class="card-header bg-dark text-white">
+                    <h6 class="mb-0">Cash Flow</h6>
+                </div>
+                <div class="card-body">
+                    <div class="metric-title">Received via Cash</div>
+                    <div class="metric-value">
+                        Rs.<?= number_format($total_payments_today['cash'], 2) ?>
                     </div>
+                    <div class="metric-title mt-2">Till Balance</div>
+                    <div class="metric-value text-success">
+                        Rs.<?= number_format($till_balance, 2) ?>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-                    <div class="col-xl-3 col-lg-4 col-md-6">
-                        <div class="card dashboard-card shadow-sm">
-                            <div class="card-body">
-                                <div class="d-flex align-items-center">
-                                    <div class="card-icon bg-warning text-white me-3">
-                                        <i class="ri-global-line"></i>
-                                    </div>
-                                    <div>
-                                        <div class="metric-title">Online Payments</div>
-                                        <div class="metric-value text-warning">
-                                            Rs.<?= number_format($total_payments_today['online'], 2) ?>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+        <!-- Online Payments -->
+        <div class="col-xl-2 col-lg-4 col-md-6">
+            <div class="card dashboard-card shadow-sm">
+                <div class="card-body d-flex align-items-center">
+                    <div class="card-icon bg-warning text-white me-3">
+                        <i class="ri-global-line"></i>
                     </div>
-
-                    <div class="col-xl-3 col-lg-4 col-md-6">
-                        <div class="card dashboard-card shadow-sm">
-                            <div class="card-body">
-                                <div class="d-flex align-items-center">
-                                    <div class="card-icon bg-warning text-white me-3">
-                                        <i class="ri-bank-line"></i>
-                                    </div>
-                                    <div>
-                                        <div class="metric-title">Bank Transfers</div>
-                                        <div class="metric-value text-warning">
-                                            Rs.<?= number_format($total_payments_today['bank'], 2) ?>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-xl-3 col-lg-4 col-md-6">
-                        <div class="card dashboard-card shadow-sm">
-                            <div class="card-body">
-                                <div class="d-flex align-items-center">
-                                    <div class="card-icon bg-danger text-white me-3">
-                                        <i class="ri-bank-card-2-line"></i>
-                                    </div>
-                                    <div>
-                                        <div class="metric-title">Credit Payments</div>
-                                        <div class="metric-value text-danger">
-                                            Rs.<?= number_format($total_payments_today['credit'], 2) ?>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                    <div>
+                        <div class="metric-title">Online Payments</div>
+                        <div class="metric-value text-warning">
+                            Rs.<?= number_format($total_payments_today['online']) ?>
                         </div>
                     </div>
                 </div>
             </div>
+        </div>
+
+        <!-- Bank Transfers -->
+        <div class="col-xl-2 col-lg-4 col-md-6">
+            <div class="card dashboard-card shadow-sm">
+                <div class="card-body d-flex align-items-center">
+                    <div class="card-icon bg-primary text-white me-3">
+                        <i class="ri-bank-line"></i>
+                    </div>
+                    <div>
+                        <div class="metric-title">Bank Transfers</div>
+                        <div class="metric-value text-primary">
+                            Rs.<?= number_format($total_payments_today['bank']) ?>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Credit Payments -->
+        <div class="col-xl-2 col-lg-4 col-md-6">
+            <div class="card dashboard-card shadow-sm">
+                <div class="card-body d-flex align-items-center">
+                    <div class="card-icon bg-danger text-white me-3">
+                        <i class="ri-bank-card-2-line"></i>
+                    </div>
+                    <div>
+                        <div class="metric-title">Credit Payments</div>
+                        <div class="metric-value text-danger">
+                            Rs.<?= number_format($total_payments_today['credit']) ?>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Return Payments -->
+        <div class="col-xl-2 col-lg-4 col-md-6">
+            <div class="card dashboard-card shadow-sm">
+                <div class="card-body d-flex align-items-center">
+                    <div class="card-icon bg-secondary text-white me-3">
+                        <i class="ri-refund-2-line"></i>
+                    </div>
+                    <div>
+                        <div class="metric-title">Return Payments</div>
+                        <div class="metric-value text-secondary">
+                            Rs.<?= number_format($total_amount_return) ?>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
             <?php endif; ?>
 
             <!-- Daily Summary Section -->
