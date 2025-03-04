@@ -230,19 +230,24 @@ if ($tot_bill_dis_today < 0) {
     $tot_bill_dis_today = 0;
 }
 
+$sql_daily_cash_in = "SELECT SUM(amount) AS total FROM tbl_expenses 
+                      WHERE DATE(expense_date) = CURDATE() 
+                      AND cash_in_out = 1";
+
+$rs_daily_cash_in = $conn->query($sql_daily_cash_in);
+$total_daily_cash_in = ($rs_daily_cash_in->num_rows > 0) ? $rs_daily_cash_in->fetch_assoc()['total'] : 0;
+
 // 5) Today's Expenses (unchanged)
-$sql_non_vendor_expenses = "
-    SELECT SUM(amount) AS total
+$sql_non_vendor_expenses = "SELECT SUM(amount) AS total
     FROM tbl_expenses
-    WHERE vendor_id IS NULL
+    WHERE vendor_id =0
       AND cash_in_out = 2
-      AND DATE(expense_date) = '$today_date'
-";
+      AND DATE(expense_date) = '$today_date'";
+
 $rs_non_vendor = $conn->query($sql_non_vendor_expenses);
 $non_vendor_total = $rs_non_vendor->fetch_assoc()['total'] ?? 0;
 
-$sql_vendor_cash_payments = "
-    SELECT SUM(vp.amount) AS total
+$sql_vendor_cash_payments = "SELECT SUM(vp.amount) AS total
     FROM tbl_vendor_payments vp
     INNER JOIN tbl_expenses e ON vp.expense_id = e.expense_id
     WHERE vp.payment_method = 'cash'
@@ -311,7 +316,7 @@ while ($rowP = $rs_payment_today->fetch_assoc()) {
 }
 
 // 8) Till Balance: (cash received + any cash-in) - total expenses
-$till_balance = ($total_payments_today['cash'] + $cash_in_total) - $tot_expenses_today;
+$till_balance = ($total_payments_today['cash'] + $cash_in_total) - $tot_expenses_today +$total_daily_cash_in;
 ?>
 
 <style>
