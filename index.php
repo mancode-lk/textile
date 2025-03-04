@@ -464,13 +464,30 @@ $till_balance = ($total_payments_today['cash'] + $cash_in_total) - $tot_expenses
                         <div class="card dashboard-card shadow-sm">
                             <div class="card-body">
                                 <div class="d-flex align-items-center">
-                                    <div class="card-icon bg-danger text-white me-3">
+                                    <div class="card-icon bg-warning text-white me-3">
                                         <i class="ri-bank-line"></i>
                                     </div>
                                     <div>
                                         <div class="metric-title">Bank Transfers</div>
-                                        <div class="metric-value text-danger">
+                                        <div class="metric-value text-warning">
                                             Rs.<?= number_format($total_payments_today['bank'], 2) ?>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-xl-3 col-lg-4 col-md-6">
+                        <div class="card dashboard-card shadow-sm">
+                            <div class="card-body">
+                                <div class="d-flex align-items-center">
+                                    <div class="card-icon bg-danger text-white me-3">
+                                        <i class="ri-bank-card-2-line"></i>
+                                    </div>
+                                    <div>
+                                        <div class="metric-title">Credit Payments</div>
+                                        <div class="metric-value text-danger">
+                                            Rs.<?= number_format($total_payments_today['credit'], 2) ?>
                                         </div>
                                     </div>
                                 </div>
