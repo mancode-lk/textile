@@ -59,8 +59,8 @@ if ($rs_expenses->num_rows > 0) {
             </div>
         </div>
 
-       <!-- Add Expense Form -->
-       <div class="row mt-4">
+          <!-- Add Expense Form -->
+          <div class="row mt-4">
             <div class="col-lg-6 mx-auto">
                 <div class="card shadow">
                     <div class="card-header bg-dark text-white">
@@ -156,89 +156,66 @@ if ($rs_expenses->num_rows > 0) {
         <button id="clearFilter" class="btn btn-secondary">Reset</button>
     </div>
 </div>
-
         <!-- Expense List -->
         <div class="row mt-4">
             <div class="col-lg-12">
                 <div class="card shadow">
                     <div class="card-header bg-primary text-white">
-                        <h4 class="mb-0">All Expenses</h4>
+                        <h4 class="mb-0">Today's Expenses</h4>
                     </div>
                     <div class="card-body">
-                      <table class="table table-bordered table-hover table-striped">
-    <thead>
-        <tr>
-            <th>Amount</th>
-            <th>Description</th>
-            <th>Category</th>
-            <th>Date</th>
-            <th>Vendor</th>
-            <th>Type</th> <!-- New column for Cash In/Out -->
-            <th>Action</th>
-        </tr>
-    </thead>
-    <tbody id="expenseTable">
-        <?php
-            $closing_balance = 0; // Initialize closing balance
-
-            if ($rs_expenses->num_rows > 0):
-                while ($rows = $rs_expenses->fetch_assoc()):
-                    // Update closing balance
-                    if ($rows['cash_in_out'] == 1) {
-                        $closing_balance += $rows['amount']; // CASH IN adds to balance
-                    } elseif ($rows['cash_in_out'] == 2) {
-                        $closing_balance -= $rows['amount']; // CASH OUT subtracts from balance
-                    }
-        ?>
-        <tr id="row-<?= $rows['expense_id'] ?>">
-            <td>Rs. <?= number_format($rows['amount'], 2) ?></td>
-            <td><?= htmlspecialchars($rows['description'], ENT_QUOTES) ?></td>
-            <td><span class="badge bg-info"><?= ucfirst($rows['category']) ?></span></td>
-            <td><?= date('Y-m-d', strtotime($rows['expense_date'])) ?></td>
-            <td><?= ($rows['category'] == 'vendor' && $rows['vendor_name']) ? $rows['vendor_name'] : "-" ?></td>
-            <td>
-                <?php if ($rows['cash_in_out'] == 1): ?>
-                    <span class="badge bg-success">CASH IN</span>
-                <?php elseif ($rows['cash_in_out'] == 2): ?>
-                    <span class="badge bg-danger">CASH OUT</span>
-                <?php else: ?>
-                    <span class="badge bg-secondary">UNKNOWN</span>
-                <?php endif; ?>
-            </td>
-            <td>
-                <button class="btn btn-warning btn-sm editExpenseBtn"
-                    data-id="<?= $rows['expense_id'] ?>"
-                    data-amount="<?= $rows['amount'] ?>"
-                    data-description="<?= htmlspecialchars($rows['description'], ENT_QUOTES) ?>"
-                    data-category="<?= $rows['category'] ?>"
-                    data-date="<?= date('Y-m-d', strtotime($rows['expense_date'])) ?>"
-                    data-vendor="<?= $rows['vendor_name'] ?>">
-                    Edit
-                </button>
-            </td>
-        </tr>
-        <?php endwhile; ?>
-        <?php else: ?>
-        <tr>
-            <td colspan="7" class="text-center">No records found.</td>
-        </tr>
-        <?php endif; ?>
-    </tbody>
-    <tfoot>
-        <tr class="table-primary">
-            <td colspan="6" class="text-end"><strong>Closing Balance:</strong></td>
-            <td><strong>Rs. <?= number_format($closing_balance, 2) ?></strong></td>
-        </tr>
-    </tfoot>
-</table>
-
-
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Amount</th>
+                                    <th>Description</th>
+                                    <th>Category</th>
+                                    <th>Date</th>
+                                    <th>Vendor</th>
+                                    <th>Type</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php $rs_expenses->data_seek(0); // Reset pointer to fetch again ?>
+                                <?php if ($rs_expenses->num_rows > 0): ?>
+                                    <?php while ($rows = $rs_expenses->fetch_assoc()): ?>
+                                        <tr>
+                                            <td>Rs. <?= number_format($rows['amount'], 2) ?></td>
+                                            <td><?= htmlspecialchars($rows['description'], ENT_QUOTES) ?></td>
+                                            <td><span class="badge bg-info"> <?= ucfirst($rows['category']) ?></span></td>
+                                            <td><?= date('Y-m-d', strtotime($rows['expense_date'])) ?></td>
+                                            <td><?= ($rows['category'] == 'vendor' && $rows['vendor_name']) ? $rows['vendor_name'] : "-" ?></td>
+                                            <td>
+                                                <?php if ($rows['cash_in_out'] == 1): ?>
+                                                    <span class="badge bg-success">CASH IN</span>
+                                                <?php elseif ($rows['cash_in_out'] == 2): ?>
+                                                    <span class="badge bg-danger">CASH OUT</span>
+                                                <?php else: ?>
+                                                    <span class="badge bg-secondary">UNKNOWN</span>
+                                                <?php endif; ?>
+                                            </td>
+                                        </tr>
+                                    <?php endwhile; ?>
+                                <?php else: ?>
+                                    <tr>
+                                        <td colspan="6" class="text-center">No records found.</td>
+                                    </tr>
+                                <?php endif; ?>
+                            </tbody>
+                            <tfoot>
+                                <tr class="table-primary">
+                                    <td colspan="5" class="text-end"><strong>Closing Balance:</strong></td>
+                                    <td><strong>Rs. <?= number_format($closing_balance, 2) ?></strong></td>
+                                </tr>
+                            </tfoot>
+                        </table>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
 <div class="modal fade" id="editExpenseModal" tabindex="-1" aria-labelledby="editExpenseModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -284,6 +261,7 @@ if ($rs_expenses->num_rows > 0) {
 
 
 <?php include 'layouts/footer.php'; ?>
+
 
 <script type="text/javascript">
 $(document).ready(function () {
