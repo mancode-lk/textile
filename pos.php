@@ -69,6 +69,11 @@
 </div>
 
     </header>
+    <div class="alert alert-info mt-2" id="customerInfoBox" style="display: none;">
+  <strong>Customer Phone:</strong> <span id="customerPhone">-</span> <br>
+  <strong>Outstanding Balance (LKR):</strong> <span id="customerBalance">0.00</span>
+</div>
+
 
     <!-- Two-column layout: Left = Cart Summary & Bill, Right = Product Search -->
     <div class="row g-4">
@@ -323,30 +328,36 @@ $(document).ready(function() {
     loadCustomers(); // Load customers when the page loads
 
     // Update selected customer name under the bill ID and store customer ID in session
-    $("#customerSelect").change(function() {
-        let selectedCustomerId = $("#customerSelect").val();
-        let selectedCustomerName = $("#customerSelect option:selected").attr("data-name") || "No Customer Selected";
 
-        $("#selectedCustomerName").text(selectedCustomerName);
+    $("#customerSelect").on("change", function () {
+    var customerId = $(this).val();
 
-        if (selectedCustomerId) {
-            $.ajax({
-                url: "backend/set_customer_session.php",
-                method: "POST",
-                data: { c_id: selectedCustomerId },
-                success: function(response) {
-                    if (response == "200") {
-                        console.log("Customer ID stored in session successfully.");
-                    } else {
-                        console.error("Failed to store customer ID in session.");
-                    }
-                },
-                error: function() {
-                    console.error("AJAX error: Could not store customer ID in session.");
-                }
-            });
+    if (customerId) {
+      $.ajax({
+        url: "backend/set_customer_session.php",
+        type: "POST",
+        data: { customer_id: customerId },
+        dataType: "json",
+        success: function (data) {
+          if (data.status === "success") {
+            $("#customerPhone").text(data.phone);
+            $("#customerBalance").text(parseFloat(data.balance).toFixed(2));
+            $("#customerInfoBox").fadeIn(); // Show the info box
+          } else {
+            alert("Failed to fetch customer details.");
+          }
+        },
+        error: function (xhr, status, error) {
+          console.error("AJAX Error:", error);
+          console.error("Status:", status);
+          console.error("Response Text:", xhr.responseText);
+          alert("An error occurred while fetching customer details. Check the console for details.");
         }
-    });
+      });
+    } else {
+      $("#customerInfoBox").fadeOut(); // Hide the box if no customer is selected
+    }
+  });
 
     // Add new customer form submission
     $("#customerForm").submit(function(event) {
@@ -461,7 +472,7 @@ $(document).ready(function() {
                 if (response == 200) {
                     window.location.href = "pos_grm.php";
                 } else {
-                    window.location.href = "print_bill.php?bill_id=" + response; 
+                    window.location.href = "print_bill.php?bill_id=" + response;
                 }
             },
             error: function(xhr, status, error) {
