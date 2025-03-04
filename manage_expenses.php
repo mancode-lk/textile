@@ -3,17 +3,26 @@ include 'layouts/header.php';
 include 'layouts/sidebar.php';
 
 // Initialize variables
-$total_daily = 0;
-$closing_balance = 0;
-$opening_balance = 0;
-
+$opening_balance_display = 0;
 $currDate=date('Y-m-d');
 // Fetch yesterday's closing balance as today's opening balance
 $sql_opening_balance = "SELECT * FROM tbl_expenses WHERE expense_date = '$currDate' AND category='Opening Balance'";
 $rs_opening_balance = $conn->query($sql_opening_balance);
 if ($rs_opening_balance->num_rows > 0) {
     $row = $rs_opening_balance->fetch_assoc();
-    $opening_balance = $row['amount'] ?? 0;
+    $opening_balance_display = $row['amount'] ?? 0;
+}
+
+$total_daily = 0;
+$closing_balance = 0;
+$opening_balance = 0;
+
+// Fetch yesterday's closing balance as today's opening balance
+$sql_opening_balance = "SELECT SUM(amount * (CASE WHEN cash_in_out = 1 THEN 1 ELSE -1 END)) AS closing_balance FROM tbl_expenses WHERE DATE(expense_date) = DATE_SUB(CURDATE(), INTERVAL 1 DAY)";
+$rs_opening_balance = $conn->query($sql_opening_balance);
+if ($rs_opening_balance->num_rows > 0) {
+    $row = $rs_opening_balance->fetch_assoc();
+    $opening_balance = $row['closing_balance'] ?? 0;
 }
 
 // SQL for total expenses today
@@ -45,7 +54,7 @@ if ($rs_expenses->num_rows > 0) {
                 <div class="card text-white bg-primary">
                     <div class="card-body text-center">
                         <h5 class="card-title">Opening Balance</h5>
-                        <h3>Rs. <?= number_format($opening_balance,2) ?>/-</h3>
+                        <h3>Rs. <?= number_format($opening_balance_display, 2) ?>/-</h3>
                     </div>
                 </div>
             </div>
