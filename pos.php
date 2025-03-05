@@ -586,7 +586,7 @@ function cartItemBarcode(barcode) {
         dataType: "json",
         success: function(resp) {
             if (resp.statusCode === 200) {
-                alert("✔ Item Added Successfully!");
+                // alert("✔ Item Added Successfully!");
                 let paid_amount = parseFloat(document.getElementById('paid_amount').value) || 0;
                 if (paid_amount !== 0) {
                     showBalance();
