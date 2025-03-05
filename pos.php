@@ -107,7 +107,7 @@
               <div class="col-6">
                 <div class="input-group">
                   <span class="input-group-text"><i class="fas fa-percentage"></i></span>
-                  <input type="text" id="discount_amount" onkeyup="discountBill(this.value)" class="form-control" value="<?php if($discount_price != 0){ echo $discount_price; } ?>" placeholder="Bill Disc (LKR200)" />
+                  <input type="text" id="discount_amount" onkeyup="discountBill(this.value)" class="form-control" value="<?php if($discount_price != 0){ echo $discount_price; } ?>" placeholder="Total Bill Discount" />
                 </div>
               </div>
               <!-- Total -->
