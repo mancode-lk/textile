@@ -271,7 +271,7 @@
             <label class="form-label"><i class="fas fa-hand-holding-usd me-1"></i> Amount Paid (LKR)</label>
             <div class="input-group">
               <span class="input-group-text"><i class="fas fa-rupee-sign"></i></span>
-              <input type="number" id="paid_amount" onkeyup="showBalance()" class="form-control" onkeyup="updateChange()" placeholder="Enter amount">
+              <input type="number" id="paid_amount" onkeyup="showBalance()" class="form-control" onkeyup="updateChange()" placeholder="Enter amount" autofocus>
             </div>
           </div>
 
@@ -963,7 +963,7 @@ $(document).ready(function() {
             event.preventDefault(); // Prevent default behavior
 
             if ($('#paymentModal').is(':visible')) {
-        
+
                 f12PressCount++;
 
                 if (f12PressCount === 1) {
