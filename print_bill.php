@@ -12,6 +12,7 @@ $order_date     = $rowGrm['order_date'];
 $payment_type   = getPayment($payment_type_id);
 $cus_id         = $rowGrm['customer_id'];
 $discount_price_bill = $rowGrm['discount_price'];
+
 $cash_took = $rowGrm['cash_took'];
 
 if ($cus_id != 0) {
@@ -42,6 +43,7 @@ if ($rs_ord->num_rows > 0) {
         $pid      = $rowOrd['product_id'];
         $p_name   = getDataBack($conn, 'tbl_product', 'id', $pid, 'name');
         $p_price  = getDataBack($conn, 'tbl_product', 'id', $pid, 'price');
+	$barcode   = getDataBack($conn, 'tbl_product', 'id', $pid, 'barcode');
         $quantity = $rowOrd['quantity'];
         $discount = $rowOrd['discount'] ?? 0;
         $line_total = ($p_price * $quantity) - $discount;
@@ -95,10 +97,10 @@ $balanceReturn = max(($returnAmount + $cashReturnAmount) - ($total - $discount_p
   <style>
   @media print {
     body {
-      width: 80mm;
+      width: 78mm;
       font-size: 12px;
       margin: 0;
-      padding: 0;
+      padding-left: 15px;
       font-family: 'Courier New', Courier, monospace;
     }
     .logo-container img {
@@ -124,6 +126,10 @@ $balanceReturn = max(($returnAmount + $cashReturnAmount) - ($total - $discount_p
       padding-top: 5px;
       border-top: 2px solid black;
     }
+#items{
+	font-weight: 600;
+	font-size:12px;
+}
     @page {
       size: auto;
       margin: 0;
@@ -132,6 +138,8 @@ $balanceReturn = max(($returnAmount + $cashReturnAmount) - ($total - $discount_p
   </style>
 </head>
 <body>
+<br>
+<br>
   <div class="header">
     <div class="logo-container">
       <img src="logo/b_k_logo.png" alt="Store Logo">
@@ -166,11 +174,12 @@ $balanceReturn = max(($returnAmount + $cashReturnAmount) - ($total - $discount_p
         <th>Total</th>
       </tr>
     </thead>
+<br>
     <tbody>
       <?php foreach ($items as $item) { ?>
-        <tr>
+        <tr id="items">
           <td><?= $item['quantity'] ?></td>
-          <td><?= $item['name'] ?></td>
+          <td><?= $item['name'] ?> / <?= $barcode ?></td>
           <td>Rs <?= number_format($item['unit_price']) ?>/-</td>
           <td>Rs <?= number_format($item['discount']) ?>/-</td>
           <td>Rs <?= number_format($item['is_returned'] || $item['is_cash_refund'] ? -$item['total'] : $item['total']) ?>/-</td>
@@ -180,41 +189,38 @@ $balanceReturn = max(($returnAmount + $cashReturnAmount) - ($total - $discount_p
   </table>
 
   <div class="totals">
-    <div><strong>Total Quantity:</strong> <?= $tot_qnty ?></div>
-    <div><strong>Subtotal:</strong> Rs <?= number_format($subtotal) ?>/-</div>
-
-
+    <div><strong>Total Quantity:<?= $tot_qnty ?></strong> </div>
+    <div><strong>Subtotal: Rs <?= number_format($subtotal) ?>/-</strong></div>
 
     <?php if ($total_discount > 0 || $discount_price_bill > 0) { ?>
-      <div><strong>Total Discount:</strong> Rs <?= number_format($total_discount + $discount_price_bill) ?>/-</div>
+      <div><strong>Total Discount: Rs <?= number_format($total_discount + $discount_price_bill) ?>/-</strong></div>
     <?php } ?>
 
     <?php if ($returnAmount > 0) { ?>
-      <div><strong>Return Amount:</strong> -Rs <?= number_format($returnAmount) ?>/-</div>
+      <div><strong>Return Amount: -Rs <?= number_format($returnAmount) ?>/-</strong></div>
     <?php } ?>
 
     <?php if ($cashReturnAmount > 0) { ?>
-      <div><strong>Cash Refund:</strong> -Rs <?= number_format($cashReturnAmount) ?>/-</div>
+      <div><strong>Cash Refund: -Rs <?= number_format($cashReturnAmount) ?>/-</strong></div>
     <?php } ?>
 
-    <div><strong>Final Total:</strong> Rs <?= number_format($finalTotal) ?>/-</div>
+    <div><strong>Final Total: Rs <?= number_format($finalTotal) ?>/-</strong></div>
 
     <?php if ($balanceReturn > 0) { ?>
-      <div><strong>Balance to Return:</strong> Rs <?= number_format($balanceReturn) ?>/-</div>
+      <div><strong>Balance to Return: Rs <?= number_format($balanceReturn) ?>/-</strong></div>
     <?php } ?>
-  
     <?php if($cash_took > 0){ ?>
       <div><strong>Cash Recived</strong> Rs <?= number_format($cash_took) ?>/-</div>
       <div><strong>Balance Paid</strong> Rs <?= number_format($cash_took - $finalTotal) ?>/-</div>
     <?php } ?>
-
   </div>
   <div class="footer">
     <div>
     <p>Exchange of any item in its original condition with receipt is possible within 7 days </p>
     <p>Thank you! Come again.</p></div>
   </div>
-
+<br>
+<br>
   <script>
   window.onload = function() {
   // Set the onafterprint event before calling print

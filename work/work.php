@@ -1,184 +1,233 @@
 <?php
-// Fetch all main categories
-$allCategories = [];
-$sql = "SELECT * FROM tbl_sports_category";
-$rs = $conn->query($sql);
-while ($rs && $row = $rs->fetch_assoc()) {
-    $allCategories[] = $row;
+include './backend/conn.php';
+
+$billId = $_REQUEST['bill_id'];
+$sqlGrm = "SELECT * FROM tbl_order_grm WHERE id='$billId'";
+$rsGrm = $conn->query($sqlGrm);
+$rowGrm = $rsGrm->fetch_assoc();
+
+$payment_type_id = $rowGrm['payment_type'];
+$order_ref      = $rowGrm['order_ref'];
+$order_date     = $rowGrm['order_date'];
+$payment_type   = getPayment($payment_type_id);
+$cus_id         = $rowGrm['customer_id'];
+$discount_price_bill = $rowGrm['discount_price'];
+
+if ($cus_id != 0) {
+    $cus_name    = getDataBack($conn, 'tbl_customer', 'c_id', $cus_id, 'c_name');
+    $cus_phone   = getDataBack($conn, 'tbl_customer', 'c_id', $cus_id, 'c_phone');
+    $cus_email   = getDataBack($conn, 'tbl_customer', 'c_id', $cus_id, 'c_email');
+    $cus_address = getDataBack($conn, 'tbl_customer', 'c_id', $cus_id, 'c_address');
+} else {
+    $cus_name = "Walk-in Customer";
+    $cus_phone = $cus_email = $cus_address = "";
 }
 
-$maxVisible = 10;
-$extraCategories = [];
+$tot_qnty = 0;
+$total = 0;
+$total_discount = 0;
+$subtotal = 0;
+$returnAmount = 0;
+$cashReturnAmount = 0;
 
+// Fetch order details
+$sql_ord = "SELECT * FROM tbl_order WHERE grm_ref='$billId'";
+$rs_ord = $conn->query($sql_ord);
+
+$items = [];
+
+if ($rs_ord->num_rows > 0) {
+    while ($rowOrd = $rs_ord->fetch_assoc()) {
+        $pid      = $rowOrd['product_id'];
+        $p_name   = getDataBack($conn, 'tbl_product', 'id', $pid, 'name');
+        $p_price  = getDataBack($conn, 'tbl_product', 'id', $pid, 'price');
+	$barcode   = getDataBack($conn, 'tbl_product', 'id', $pid, 'barcode');
+        $quantity = $rowOrd['quantity'];
+        $discount = $rowOrd['discount'] ?? 0;
+        $line_total = ($p_price * $quantity) - $discount;
+
+        $is_returned = false;
+        $is_cash_refund = false;
+
+        // Check if item is returned or refunded in cash
+        $sqlReturn = "SELECT * FROM tbl_return_exchange WHERE or_id='" . $rowOrd['id'] . "'";
+        $rsReturn = $conn->query($sqlReturn);
+        if ($rsReturn->num_rows > 0) {
+            $rowExchange = $rsReturn->fetch_assoc();
+            if ($rowExchange['ret_or_ex_st'] == 1) {
+                $returnAmount += $line_total;
+                $is_returned = true;
+            } else if ($rowExchange['ret_or_ex_st'] == 0) {
+                $cashReturnAmount += $line_total;
+                $is_cash_refund = true;
+            }
+        }
+
+        $items[] = [
+            'name' => $p_name . ($is_returned ? ' (Returned)' : ($is_cash_refund ? ' (Cash Refund)' : '')),
+            'quantity' => $quantity,
+            'unit_price' => $p_price,
+            'discount' => $discount,
+            'total' => $line_total,
+            'is_returned' => $is_returned,
+            'is_cash_refund' => $is_cash_refund
+        ];
+
+        $subtotal += $p_price * $quantity;
+        $total += $line_total;
+        $total_discount += $discount;
+        $tot_qnty += $quantity;
+    }
+}
+
+// Apply bill discount
+$totalAfterReturns = $total - $discount_price_bill - $returnAmount;
+$finalTotal = max($totalAfterReturns - $cashReturnAmount, 0);
+$balanceReturn = max(($returnAmount + $cashReturnAmount) - ($total - $discount_price_bill), 0);
 ?>
 
-<!-- Top Bar (Only for Desktop) -->
-<div class="top-bar d-none d-lg-block">
-  <div class="container d-flex justify-content-between align-items-center">
-    <!-- Social Media Links -->
-    <div class="social-icons">
-      <a href="https://www.facebook.com" target="_blank"><i class="bi bi-facebook"></i></a>
-      <a href="https://www.instagram.com" target="_blank"><i class="bi bi-instagram"></i></a>
-      <a href="https://www.linkedin.com" target="_blank"><i class="bi bi-linkedin"></i></a>
-      <a href="https://www.tiktok.com" target="_blank"><i class="bi bi-tiktok"></i></a>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=80mm, initial-scale=1.0">
+  <title>Invoice #<?= $order_ref ?></title>
+  <style>
+  @media print {
+    body {
+      width: 78mm;
+      font-size: 12px;
+      margin: 0;
+      padding-left: 15px;
+      font-family: 'Courier New', Courier, monospace;
+    }
+    .logo-container img {
+      width: 60mm;
+      height: auto;
+      max-height: 30mm;
+    }
+    .header, .store-details, .invoice-details, .totals, .customer-details, .footer {
+      text-align: center;
+    }
+    .items-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 5px;
+    }
+    .items-table th, .items-table td {
+      padding: 4px;
+      border-bottom: 1px dashed #000;
+      text-align: center;
+    }
+    .totals {
+      margin-top: 10px;
+      padding-top: 5px;
+      border-top: 2px solid black;
+    }
+#items{
+	font-weight: 600;
+	font-size:12px;
+}
+    @page {
+      size: auto;
+      margin: 0;
+    }
+  }
+  </style>
+</head>
+<body>
+<br>
+<br>
+  <div class="header">
+    <div class="logo-container">
+      <img src="logo/b_k_logo.png" alt="Store Logo">
     </div>
-
-    <!-- Quick Links & Email -->
-    <div class="top-bar-links">
-      <span class="email"><i class="bi bi-envelope-fill"></i> info@koutoubiaoy.com</span>
-    </div>
-  </div>
-</div>
-
-<!-- Navigation Bar -->
-<nav class="navbar navbar-expand-lg navbar-light bg-light shadow-sm custom-navbar">
-  <div class="container">
-    <!-- Logo -->
-    <a class="navbar-brand" href="index.php">
-      <img src="assets/images/logo/logo.png" alt="Logo" class="d-inline-block align-top" style="height:50px;">
-    </a>
-    <!-- Mobile Offcanvas Toggle -->
-    <button class="navbar-toggler d-lg-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileNav">
-      <span class="navbar-toggler-icon"></span>
-    </button>
-
-    <!-- Desktop Navigation -->
-    <div class="collapse navbar-collapse d-none d-lg-block" id="desktopNav">
-      <ul class="navbar-nav ms-auto">
-
-        <!-- Products (Opens Offcanvas) -->
-        <li class="nav-item">
-          <a class="nav-link" href="#" data-bs-toggle="offcanvas" data-bs-target="#mobileNav">
-            <i class="bi bi-grid"></i> Products
-          </a>
-        </li>
-
-        <!-- Services Dropdown -->
-        <li class="nav-item dropdown">
-          <a class="nav-link dropdown-toggle" href="#" id="servicesDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-            <i class="bi bi-tools"></i> Services
-          </a>
-          <ul class="dropdown-menu" aria-labelledby="servicesDropdown">
-            <li><a class="dropdown-item" href="project-management.php">Project Management</a></li>
-            <li><a class="dropdown-item" href="installation.php">Installation</a></li>
-            <li><a class="dropdown-item" href="maintenance.php">Maintenance</a></li>
-          </ul>
-        </li>
-
-        <!-- About Us -->
-        <li class="nav-item">
-          <a class="nav-link" href="about-us.php">
-            <i class="bi bi-info-circle"></i> About Us
-          </a>
-        </li>
-
-        <!-- Contact Us -->
-        <li class="nav-item">
-          <a class="nav-link" href="contact-us.php">Contact Us</a>
-        </li>
-      </ul>
+    <div class="store-details">
+      <div>No.115 Nuwara Eliya Road, Gampola</div>
+      <div>Phone: 077 9003566</div>
     </div>
   </div>
-</nav>
 
-
-
-
-<div class="offcanvas offcanvas-start custom-offcanvas" id="mobileNav">
-  <div class="offcanvas-header">
-    <h5 class="offcanvas-title">Our Services</h5>
-    <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
+  <div class="invoice-details">
+    <div><strong>Invoice #: <?= $order_ref ?></strong></div>
+    <div>Date: <?= $order_date ?></div>
+    <div>Payment: <?= $payment_type ?></div>
   </div>
-  <div class="offcanvas-body">
-    <ul class="navbar-nav">
 
-      <?php
-      // Fetch all main categories
-      $allCategories = [];
-      $sql = "SELECT * FROM tbl_sports_category";
-      $rs = $conn->query($sql);
-      while ($rs && $row = $rs->fetch_assoc()) {
-          $allCategories[] = $row;
-      }
-
-      if (empty($allCategories)) {
-          echo '<li class="nav-item"><a class="nav-link">No Categories Available</a></li>';
-      } else {
-          foreach ($allCategories as $row) {
-              $id = $row['cat_id'];
-              $categoryID = "mobileCategory" . $id;
-
-              // Check if the category has images
-              $sqlMain = "SELECT * FROM tbl_images WHERE cat_id='$id'";
-              $rsMain = $conn->query($sqlMain);
-              if ($rsMain && $rsMain->num_rows > 0) {
-                  // If images exist, make it a direct link
-                  echo '<li class="nav-item"><a class="nav-link etc" href="page.php?cat_id=' . htmlspecialchars($id) . '">' . htmlspecialchars(ucwords(strtolower($row['cat_name']))) . '</a></li>';
-              } else {
-                  // Otherwise, it has subcategories (collapsible menu)
-                  ?>
-
-                  <li class="nav-item">
-                    <a class="nav-link mobile-menu-item" data-bs-toggle="collapse" href="#<?= $categoryID ?>">
-                      <?= htmlspecialchars(ucwords(strtolower($row['cat_name']))) ?> <i class="bi bi-chevron-down mobile-arrow"></i>
-                    </a>
-
-                    <div class="collapse" id="<?= $categoryID ?>">
-                      <ul class="list-unstyled mobile-submenu">
-
-                        <?php
-                        $sql_sub = "SELECT * FROM tbl_sub_sports_category WHERE cat_id='$id'";
-                        $rs_sub  = $conn->query($sql_sub);
-
-                        if ($rs_sub && $rs_sub->num_rows > 0) {
-                            while ($row_sub = $rs_sub->fetch_assoc()) {
-                                $sub_id = $row_sub['sub_cat_id'];
-                                $subCategoryID = "mobileSubcategory" . $sub_id;
-
-                                // Check if subcategory has images
-                                $sqlSub = "SELECT * FROM tbl_images WHERE sub_cat_id='$sub_id'";
-                                $rsSub  = $conn->query($sqlSub);
-                                if ($rsSub && $rsSub->num_rows > 0) {
-                                    // If images exist, make it a direct link
-                                    echo '<li><a class="nav-link" style="text-transform:Capitalize;" href="page.php?sub_cat_id=' . htmlspecialchars($sub_id) . '">' . htmlspecialchars(ucwords(strtolower($row_sub['sub_cat_name']))) . '</a></li>';
-                                } else {
-                                    // Otherwise, it has sub-subcategories (collapsible)
-                                    ?>
-                                    <li class="nav-item">
-                                      <a class="nav-link mobile-menu-item" style="text-transform:Capitalize;" data-bs-toggle="collapse" href="#<?= $subCategoryID ?>">
-                                        <?= htmlspecialchars(ucwords(strtolower($row_sub['sub_cat_name']))) ?> <i class="bi bi-chevron-down mobile-arrow"></i>
-                                      </a>
-
-                                      <div class="collapse" id="<?= $subCategoryID ?>">
-                                        <ul class="list-unstyled mobile-subsubmenu">
-
-                                          <?php
-                                          $sql_sub_sub = "SELECT * FROM tbl_super_sub_category WHERE sub_cat_id='$sub_id'";
-                                          $rs_sub_sub  = $conn->query($sql_sub_sub);
-                                          if ($rs_sub_sub && $rs_sub_sub->num_rows > 0) {
-                                              while ($row_sub_sub = $rs_sub_sub->fetch_assoc()) { ?>
-                                                <li>
-                                                  <a class="nav-link" style="text-transform:Capitalize;" href="page.php?sub_subcategory_id=<?= htmlspecialchars($row_sub_sub['super_sub_cat_id']) ?>">
-                                                    <?= htmlspecialchars(ucwords(strtolower($row_sub_sub['super_sub_cat_name']))) ?>
-                                                  </a>
-                                                </li>
-                                              <?php }
-                                          } ?>
-
-                                        </ul>
-                                      </div>
-                                    </li>
-                                <?php } ?>
-                            <?php } ?>
-                        <?php } ?>
-
-                      </ul>
-                    </div>
-                  </li>
-
-              <?php } ?>
-      <?php } } ?>
-
-    </ul>
+  <div class="customer-details">
+    <strong>Customer Details:</strong>
+    <div><?= $cus_name ?></div>
+    <div><?= $cus_address ?></div>
+    <div><?= $cus_phone ?></div>
+    <div><?= $cus_email ?></div>
   </div>
-</div>
+
+  <table class="items-table">
+    <thead>
+      <tr>
+        <th>Qty</th>
+        <th>Product</th>
+        <th>Unit</th>
+        <th>Discount</th>
+        <th>Total</th>
+      </tr>
+    </thead>
+<br>
+    <tbody>
+      <?php foreach ($items as $item) { ?>
+        <tr id="items">
+          <td><?= $item['quantity'] ?></td>
+          <td><?= $item['name'] ?> / <?= $barcode ?></td>
+          <td>Rs <?= number_format($item['unit_price']) ?>/-</td>
+          <td>Rs <?= number_format($item['discount']) ?>/-</td>
+          <td>Rs <?= number_format($item['is_returned'] || $item['is_cash_refund'] ? -$item['total'] : $item['total']) ?>/-</td>
+        </tr>
+      <?php } ?>
+    </tbody>
+  </table>
+
+  <div class="totals">
+    <div><strong>Total Quantity:<?= $tot_qnty ?></strong> </div>
+    <div><strong>Subtotal: Rs <?= number_format($subtotal) ?>/-</strong></div>
+
+    <?php if ($total_discount > 0 || $discount_price_bill > 0) { ?>
+      <div><strong>Total Discount: Rs <?= number_format($total_discount + $discount_price_bill) ?>/-</strong></div>
+    <?php } ?>
+
+    <?php if ($returnAmount > 0) { ?>
+      <div><strong>Return Amount: -Rs <?= number_format($returnAmount) ?>/-</strong></div>
+    <?php } ?>
+
+    <?php if ($cashReturnAmount > 0) { ?>
+      <div><strong>Cash Refund: -Rs <?= number_format($cashReturnAmount) ?>/-</strong></div>
+    <?php } ?>
+
+    <div><strong>Final Total: Rs <?= number_format($finalTotal) ?>/-</strong></div>
+
+    <?php if ($balanceReturn > 0) { ?>
+      <div><strong>Balance to Return: Rs <?= number_format($balanceReturn) ?>/-</strong></div>
+    <?php } ?>
+  </div>
+  <div class="footer">
+    <div>
+    <p>Exchange of any item in its original condition with receipt is possible within 7 days </p>
+    <p>Thank you! Come again.</p></div>
+  </div>
+<br>
+<br>
+  <script>
+  window.onload = function() {
+  // Set the onafterprint event before calling print
+  window.onafterprint = function() {
+      window.location.href = "pos.php"; // Redirect after printing
+  };
+
+  // Delay to ensure the page is fully loaded before printing
+  setTimeout(function() {
+      window.print();
+  }, 500);
+};
+
+  </script>
+</body>
+</html>
