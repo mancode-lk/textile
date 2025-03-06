@@ -12,6 +12,7 @@ $order_date     = $rowGrm['order_date'];
 $payment_type   = getPayment($payment_type_id);
 $cus_id         = $rowGrm['customer_id'];
 $discount_price_bill = $rowGrm['discount_price'];
+$cash_took = $rowGrm['cash_took'];
 
 if ($cus_id != 0) {
     $cus_name    = getDataBack($conn, 'tbl_customer', 'c_id', $cus_id, 'c_name');
@@ -182,6 +183,8 @@ $balanceReturn = max(($returnAmount + $cashReturnAmount) - ($total - $discount_p
     <div><strong>Total Quantity:</strong> <?= $tot_qnty ?></div>
     <div><strong>Subtotal:</strong> Rs <?= number_format($subtotal) ?>/-</div>
 
+
+
     <?php if ($total_discount > 0 || $discount_price_bill > 0) { ?>
       <div><strong>Total Discount:</strong> Rs <?= number_format($total_discount + $discount_price_bill) ?>/-</div>
     <?php } ?>
@@ -199,6 +202,12 @@ $balanceReturn = max(($returnAmount + $cashReturnAmount) - ($total - $discount_p
     <?php if ($balanceReturn > 0) { ?>
       <div><strong>Balance to Return:</strong> Rs <?= number_format($balanceReturn) ?>/-</div>
     <?php } ?>
+  
+    <?php if($cash_took > 0){ ?>
+      <div><strong>Cash Recived</strong> Rs <?= number_format($cash_took) ?>/-</div>
+      <div><strong>Balance Paid</strong> Rs <?= number_format($cash_took - $finalTotal) ?>/-</div>
+    <?php } ?>
+
   </div>
   <div class="footer">
     <div>

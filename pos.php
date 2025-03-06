@@ -468,6 +468,7 @@ $(document).ready(function() {
     $("#complete_bill").click(function() {
         let discount_amount = $("#discount_amount").val() || 0;
         let payment_method = $("#payment_method").val();
+        let paid_amount = $('#paid_amount').val();
 
         var selectedCustomerName = $("#selectedCustomerName").text().trim();
         if (selectedCustomerName === "No Customer Selected" && payment_method == 3) {
@@ -481,6 +482,7 @@ $(document).ready(function() {
             data: {
                 discount_amount: discount_amount,
                 payment_method: payment_method,
+                paid_amount_e:paid_amount,
                 action: "complete_bill",
                 act:0
             },
@@ -506,6 +508,7 @@ $(document).ready(function() {
     $("#complete_bill_without_bill").click(function() {
         let discount_amount = $("#discount_amount").val() || 0;
         let payment_method = $("#payment_method").val();
+        let paid_amount = $('#paid_amount').val();
 
         var selectedCustomerName = $("#selectedCustomerName").text().trim();
         if (selectedCustomerName === "No Customer Selected" && payment_method == 3) {
@@ -519,6 +522,7 @@ $(document).ready(function() {
             data: {
                 discount_amount: discount_amount,
                 payment_method: payment_method,
+                paid_amount_e:paid_amount,
                 action: "complete_bill",
                 act:1
             },
@@ -545,12 +549,14 @@ $(document).ready(function() {
     $("#add_to_draft").click(function() {
         let discount_amount = $("#discount_amount").val() || 0;
         let payment_method = $("input[name='payment']:checked").val();
+        let paid_amount = $('#paid_amount').val();
         $.ajax({
             url: "backend/save_bill.php",
             method: "POST",
             data: {
                 discount_amount: discount_amount,
                 payment_method: payment_method,
+                paid_amount_e:paid_amount,
                 action: "add_to_draft"
             },
             beforeSend: function() {
@@ -883,6 +889,7 @@ $(document).ready(function() {
     function fkeypressed(){
       let discount_amount = $("#discount_amount").val() || 0;
       let payment_method = $("#payment_method").val();
+      let paid_amount = $('#paid_amount').val();
 
       var selectedCustomerName = $("#selectedCustomerName").text().trim();
       if (selectedCustomerName === "No Customer Selected" && payment_method == 3) {
@@ -896,6 +903,7 @@ $(document).ready(function() {
           data: {
               discount_amount: discount_amount,
               payment_method: payment_method,
+              paid_amount_e:paid_amount,
               action: "complete_bill",
               act:0
           },
@@ -920,6 +928,7 @@ $(document).ready(function() {
     function fkeypresstwice(){
       let discount_amount = $("#discount_amount").val() || 0;
       let payment_method = $("#payment_method").val();
+      let paid_amount = $('#paid_amount').val();
 
       var selectedCustomerName = $("#selectedCustomerName").text().trim();
       if (selectedCustomerName === "No Customer Selected" && payment_method == 3) {
@@ -933,6 +942,7 @@ $(document).ready(function() {
           data: {
               discount_amount: discount_amount,
               payment_method: payment_method,
+              paid_amount_e:paid_amount,
               action: "complete_bill",
               act:1
           },
