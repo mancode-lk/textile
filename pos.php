@@ -98,7 +98,7 @@
       <div class="col-md-6">
         <div class="card h-100">
           <div class="card-header bg-primary text-white">
-            <h4 class="mb-0"><i class="fas fa-shopping-cart me-2"></i>Cart Summary & Bill <input type="hidden" id="addedValueTxt" name="" value=""> </h4>
+            <h4 class="mb-0"><i class="fas fa-shopping-cart me-2"></i>Cart Summary & Bill  </h4>
           </div>
           <div class="card-body">
             <!-- Cart Items List (Scrollable) -->
@@ -134,7 +134,7 @@
             </div>
             <hr />
             <!-- Payment Options -->
-            <input type="hidden" id="totPrice" value="">
+
             <hr>
             <?php if($orderStatus !=1){ ?>
             <div class="row">
@@ -885,5 +885,6 @@ $(document).ready(function() {
         <?php if($discount_price != 0) { ?>
           discountBill(<?= $discount_price ?>);
         <?php } ?>
+
       };
     </script>
