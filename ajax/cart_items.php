@@ -20,6 +20,7 @@ if ($rs->num_rows > 0) {
                 $p_price = getDataBack($conn, 'tbl_product', 'id', $p_id, 'price');
                 $qty = $row['quantity'];
                 $discount = $row['discount'] ?? 0;
+                $discount = $discount * $qty;
                 $currentStock = currentStockCount($conn, $p_id);
                 $exchange_st = -1;
 

@@ -15,6 +15,7 @@
             $qty = $row['quantity'];
             $p_price = getDataBack($conn, 'tbl_product', 'id', $p_id, 'price') * $qty;
             $discount = $row['discount'] ?? 0;
+            $discount = $discount * $qty;
             $p_price -= $discount;
             $total_discount += $discount;
 
