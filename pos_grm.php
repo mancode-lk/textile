@@ -8,12 +8,21 @@
            <!-- Sidebar -->
 			<?php include './layouts/sidebar.php'; ?>
 			<!-- /Sidebar -->
+<?php
 
+$ggid = getDataBack($conn,'tbl_order_grm','order_st',5,'id');
+
+$sql = "DELETE FROM tbl_order WHERE grm_ref='$ggid'";
+$rs = $conn->query($sql);
+
+$sql="DELETE FROM tbl_order_grm WHERE order_st=5";
+$rs=$conn->query($sql);
+ ?>
 			<div class="page-wrapper">
 				<div class="content">
 					<div class="page-header">
 						<div class="page-title">
-							<h4>Orders</h4>
+							<h4>Orders  </h4>
 							<h6>Place an order</h6>
 						</div>
 					</div>
@@ -313,7 +322,7 @@
 		$sql = "SELECT * FROM tbl_order WHERE grm_ref='$gid'";
 		$rs = $conn->query($sql);
 		if($rs->num_rows == 0){
-			$sql="DELETE FROM tbl_order_grm WHERE id='$gid'";
+			$sql="DELETE FROM tbl_order_grm WHERE id='$gid' OR order_st=5";
 			$rs=$conn->query($sql);
 		}
 		unset($_SESSION['grm_ref']);

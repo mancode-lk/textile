@@ -3,7 +3,7 @@
 
   if (!isset($_SESSION['grm_ref'])) {
       $order_ref = generateOrderRef($conn);
-      $sqlCreate = "INSERT INTO tbl_order_grm (order_ref, order_st) VALUES ('$order_ref', 0)";
+      $sqlCreate = "INSERT INTO tbl_order_grm (order_ref, order_st) VALUES ('$order_ref', 5)";
       $rsCreate = $conn->query($sqlCreate);
 
       $grm_id = $conn->insert_id;
@@ -13,6 +13,9 @@
 
       if($orderStatus == 0){
         $orSt="DRAFT";
+      }
+      elseif($orderStatus == 5){
+        $orSt ="On Process";
       }
       else {
         $orSt="Completed";
@@ -24,6 +27,9 @@
 
       if($orderStatus == 0){
         $orSt="DRAFT";
+      }
+      elseif($orderStatus == 5){
+        $orSt ="On Process";
       }
       else {
         $orSt="Completed";

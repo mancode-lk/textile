@@ -20,6 +20,9 @@ if ($rs->num_rows > 0) {
         if($orderStatus == 0){
           $orSt="DRAFT";
         }
+        elseif($orderStatus == 5){
+          $orSt ="On Process";
+        }
         else {
           $orSt="Completed";
         }
