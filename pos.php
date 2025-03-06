@@ -879,6 +879,120 @@ $(document).ready(function() {
           });
         }
     }
+
+    function fkeypressed(){
+      let discount_amount = $("#discount_amount").val() || 0;
+      let payment_method = $("#payment_method").val();
+
+      var selectedCustomerName = $("#selectedCustomerName").text().trim();
+      if (selectedCustomerName === "No Customer Selected" && payment_method == 3) {
+          alert("For the credit bill customer details required");
+          return false;
+      }
+
+      $.ajax({
+          url: "backend/save_bill.php",
+          method: "POST",
+          data: {
+              discount_amount: discount_amount,
+              payment_method: payment_method,
+              action: "complete_bill",
+              act:0
+          },
+          beforeSend: function() {
+              $("#complete_bill").prop("disabled", true).text("Processing...");
+          },
+          success: function(response) {
+              if (response == 200) {
+                  window.location.href = "pos_grm.php";
+              } else {
+                  window.location.href = "print_bill.php?bill_id=" + response;
+              }
+          },
+          error: function(xhr, status, error) {
+              alert("Failed to complete bill. Try again.");
+              $("#complete_bill").prop("disabled", false).text("Complete Bill");
+              console.error(error);
+          }
+      });
+    }
+
+    function fkeypresstwice(){
+      let discount_amount = $("#discount_amount").val() || 0;
+      let payment_method = $("#payment_method").val();
+
+      var selectedCustomerName = $("#selectedCustomerName").text().trim();
+      if (selectedCustomerName === "No Customer Selected" && payment_method == 3) {
+          alert("For the credit bill customer details required");
+          return false;
+      }
+
+      $.ajax({
+          url: "backend/save_bill.php",
+          method: "POST",
+          data: {
+              discount_amount: discount_amount,
+              payment_method: payment_method,
+              action: "complete_bill",
+              act:1
+          },
+          beforeSend: function() {
+              $("#complete_bill").prop("disabled", true).text("Processing...");
+          },
+          success: function(response) {
+              if (response == 200) {
+                  window.location.href = "pos_grm.php";
+              } else {
+                  alert("Error: " + response);
+                  $("#complete_bill").prop("disabled", false).text("Complete Bill");
+              }
+          },
+          error: function(xhr, status, error) {
+              alert("Failed to complete bill. Try again.");
+              $("#complete_bill").prop("disabled", false).text("Complete Bill");
+              console.error(error);
+          }
+      });
+    }
+
+    let f12PressCount = 0;
+    let timer;
+
+    document.addEventListener("keydown", function(event) {
+        if (event.keyCode === 123) { // F12 key
+            event.preventDefault(); // Prevent default behavior
+
+            if ($('#paymentModal').is(':visible')) {
+        
+                f12PressCount++;
+
+                if (f12PressCount === 1) {
+
+                    clearTimeout(timer);
+                    timer = setTimeout(() => {
+                        if (f12PressCount === 1) {
+                            fkeypressed();
+                        }
+                        f12PressCount = 0;
+                    }, 1000);
+                }
+                else if (f12PressCount === 2) {
+                    clearTimeout(timer);
+                    fkeypresstwice();
+                    f12PressCount = 0;
+                }
+            } else {
+
+                pre_complete();
+            }
+        }
+    });
+
+
+
+
+
+
     </script>
     <script>
       window.onload = function() {
