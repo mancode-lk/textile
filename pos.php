@@ -109,7 +109,7 @@
               <div class="col-lg-8">
                 <div class="input-group">
                   <span class="input-group-text"><i class="fas fa-barcode"></i></span>
-                  <input type="text" class="form-control" <?php if($orderStatus == 1){ echo "disabled"; } ?> id="barcodeInput" placeholder="Add Items By Barcode Search" />
+                  <input type="text" class="form-control" <?php if($orderStatus == 1){ echo "disabled"; } ?> id="barcodeInput" placeholder="Add Items By Barcode Search" autofocus />
                 </div>
               </div>
             </div>
